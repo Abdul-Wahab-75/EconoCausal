@@ -1,0 +1,59 @@
+================================================================================
+ENTRY 01: Project Foundation, Architecture & v1 Release
+Author: Meet
+Date: October 2026
+Commit Reference: a2756d5 (v1 complete EconoCausal project)
+================================================================================
+
+WHAT WAS THE GOAL?
+------------------
+We had an ambitious brief: build a Causal AI engine that helps retail businesses stop wasting money on discounts for people who would buy anyway, and instead direct marketing budget only to customers who genuinely need a nudge.
+
+To get started, we needed a rock-solid foundation that:
+1. Gives all 4 team members clear areas to work in without code conflicts.
+2. Explains the complicated mathematics of causal inference in simple terms everyone can grasp.
+3. Provides a working end-to-end prototype from Day 1 (data -> causal model -> budget solver -> visual dashboard).
+
+
+WHAT I DID AS MEET:
+-------------------
+
+1. Built a Collaborative 4-Member Team Structure:
+   - I divided the project into 4 clean responsibilities:
+     * Member 1: Data pipeline (loading, cleaning, synthetic generation)
+     * Member 2: Causal ML models (Double Machine Learning / DML, nuisance models)
+     * Member 3: Budget optimization (0/1 Knapsack solver, greedy heuristics)
+     * Member 4: Evaluation & UI (Qini curves, uplift metrics, Streamlit dashboard)
+   - Created our Git workflow rules so everyone knows how to branch and merge safely.
+
+2. Created My Personal Branch "Meet":
+   - Branched off main cleanly and connected it to our GitHub remote (Abdul-Wahab-75/EconoCausal).
+   - Ensured all my contributions are tracked transparently under my own branch.
+
+3. Completely Redesigned the README.md in Plain Human Words:
+   - Causal inference can sound intimidating with terms like "Orthogonalization" and "ATE/CATE".
+   - I replaced confusing jargon with real-life analogies:
+     * Ice Cream & Sunburn: Explaining why correlation is not causation (hot sun causes both).
+     * The 4 Customer Types:
+       - The Sure Thing (buys anyway - don't waste discounts here!)
+       - The Persuadable (only buys if given a discount - the sweet spot!)
+       - The Lost Cause (never buys even with discounts - save your money!)
+       - The Sleeping Dog (discount annoys them - leave them alone!)
+     * Suitcase Packing Analogy: Explaining the Knapsack problem (how to pack the highest value items into a limited weight suitcase).
+
+4. Built the Core Causal & Optimization Codebase:
+   - Built a synthetic data generator with known ground truth so we can mathematically prove our model works before touching real messy data.
+   - Built the Double Machine Learning (DML) residualization engine that strips away confounders (like seasonality and income) to find the pure incremental treatment effect (ITE).
+   - Built the 0/1 Knapsack budget optimizer that chooses exactly which customers to target given a maximum marketing budget.
+   - Built the Qini curve and Cumulative Gain metrics to grade how well our model targets customers compared to random guessing.
+
+5. Added Interactive Streamlit Dashboard & Unit Testing:
+   - Built a live visual dashboard (`streamlit run src/dashboard/app.py`) where anyone can adjust budgets, select models, and see dynamic uplift charts.
+   - Wrote 8 automated unit tests covering all components.
+   - Ran pytest and verified all 8 tests pass with flying colors.
+
+
+KEY RESULT & TAKEAWAY:
+----------------------
+We now have a working, tested, and beautifully documented end-to-end version 1! Anyone who joins the project can understand what we are doing in 5 minutes just by reading the README, running the tests, or exploring the dashboard.
+================================================================================
