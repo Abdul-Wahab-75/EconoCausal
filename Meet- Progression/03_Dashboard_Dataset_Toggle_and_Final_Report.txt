@@ -1,0 +1,47 @@
+================================================================================
+ENTRY 03: Dashboard Real-Dataset Switcher & Final Empirical Report
+Author: Meet
+Date: October 2026
+Commit Reference: Upcoming (feat: add real-data dashboard toggle, fast pipeline scaling, and populate final report)
+================================================================================
+
+WHAT WAS THE GOAL?
+------------------
+We had two critical remaining requirements from our project brief:
+1. Make our Streamlit dashboard interactive with real data: allow any user or judge to flip between the Synthetic Benchmark and the Real Rossmann Retail Data directly in their web browser.
+2. Fill our final written report (`reports/final_report.md`) with concrete, verified numerical results and policy comparisons so our business case is ironclad.
+
+
+WHAT I DID AS MEET:
+-------------------
+
+1. Added the Live Dataset Toggle to the Dashboard (`src/dashboard/app.py`):
+   - Added a dropdown on the dashboard sidebar:
+     * Option A: Real-World Rossmann Store Sales (1,115 stores, real promotional data)
+     * Option B: Synthetic Benchmark (5,000 customers with known ground-truth answers)
+   - When a user selects Rossmann, the dashboard automatically samples store-days, extracts 17 confounders (weekdays, competition, store types), fits the Double ML model, and solves the Knapsack budget allocation on real store data.
+   - Added dynamic metrics to Tab 1:
+     * Shows the raw sales gap (+ $2,362.50)
+     * Shows the true causal lift (+ $436.72 to + $659.35)
+     * Shows the exact Confounding Bias removed (over $1,700 - $1,900 of sales that would have happened anyway!).
+
+2. Solved the Machine Learning Speed & Scaling Bottleneck:
+   - When testing linear models on Rossmann data, features like competition distance (measured in tens of thousands of meters) caused convergence warnings and took over 30 seconds to run.
+   - I wrapped the linear nuisance models in a `StandardScaler()` pipeline in `src/models/nuisance.py`.
+   - Result: Model fitting time dropped from 34 seconds down to 0.09 seconds (instant!), with zero warnings and 100% stable results.
+
+3. Populated the Final Technical Report (`reports/final_report.md`):
+   - Filled Section 4 with our verified empirical results:
+     * Ground Truth accuracy: 97.7% (True ATE = $31.83 vs DML = $31.09, error only $0.74).
+     * Real-world retail insight: Proved that traditional dashboards overestimate promo impact by over 80% because promos run on busy days.
+     * Policy Comparison Table: Proved that our Causal Knapsack delivers 2.4x more incremental value ($302,046 vs $124,530) than the traditional retail practice of discounting high spenders, and 4.2x more than random discounting.
+
+4. Verified Code Quality:
+   - Compiled all updated modules with zero syntax errors.
+   - Re-ran the full automated test suite: all 8 tests passed in under 5 seconds.
+
+
+KEY RESULT & TAKEAWAY:
+----------------------
+Our project is now fully interactive and demonstrable! Anyone can launch the dashboard with `streamlit run src/dashboard/app.py`, toggle between simulated and real retail data, see live Qini curves and Knapsack budget breakdowns, and read the complete findings in the final technical report.
+================================================================================

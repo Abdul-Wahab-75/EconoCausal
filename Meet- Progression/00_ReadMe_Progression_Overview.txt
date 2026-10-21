@@ -23,5 +23,8 @@ LOG INDEX:
 - 02_Real_World_Data_Rossmann_Integration.txt
   -> Transitioning from synthetic data to real-world data (Rossmann 1M+ rows), writing the data loader, engineering 17 business confounders, and testing end-to-end.
 
+- 03_Dashboard_Dataset_Toggle_and_Final_Report.txt
+  -> Adding real Rossmann data switcher to Streamlit dashboard, fixing ML convergence with feature scaling, and populating the final research report with empirical metrics.
+
 More entries will be added here before each upcoming commit!
 ================================================================================

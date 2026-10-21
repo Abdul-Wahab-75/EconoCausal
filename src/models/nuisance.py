@@ -15,8 +15,11 @@ def get_nuisance_models(model_type: str = "random_forest") -> Tuple[Any, Any]:
         model_y = GradientBoostingRegressor(n_estimators=100, max_depth=4, random_state=42)
         model_t = GradientBoostingRegressor(n_estimators=100, max_depth=4, random_state=42)
     elif model_type == "linear":
-        model_y = LassoCV(cv=5, random_state=42)
-        model_t = LogisticRegressionCV(cv=5, random_state=42, max_iter=1000)
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.linear_model import RidgeCV, LogisticRegression
+        model_y = make_pipeline(StandardScaler(), RidgeCV())
+        model_t = make_pipeline(StandardScaler(), LogisticRegression(random_state=42, max_iter=500))
     else:
         raise ValueError(f"Unknown nuisance model_type: {model_type}")
         
