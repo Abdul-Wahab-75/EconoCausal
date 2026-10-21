@@ -170,6 +170,22 @@ st.markdown("""
 # Sidebar Controls
 st.sidebar.markdown("### Control Parameters")
 
+# Currency Toggle
+currency_choice = st.sidebar.radio(
+    "Currency Display",
+    ["Rupees (INR)", "US Dollars (USD)"],
+    index=0,
+    horizontal=True,
+    help="Toggle financial figures and allocation reporting between Indian Rupees and US Dollars."
+)
+
+if "Rupees" in currency_choice:
+    curr_sym = "₹"
+    curr_code = "INR"
+else:
+    curr_sym = "$"
+    curr_code = "USD"
+
 dataset_type = st.sidebar.selectbox(
     "Data Source",
     [
@@ -181,12 +197,12 @@ dataset_type = st.sidebar.selectbox(
 
 if dataset_type == "Synthetic Benchmark (Known Ground Truth)":
     sample_size = st.sidebar.slider("Customer Population", min_value=1000, max_value=15000, value=5000, step=1000)
-    budget = st.sidebar.slider("Marketing Budget ($)", min_value=1000, max_value=50000, value=10000, step=1000)
+    budget = st.sidebar.slider(f"Marketing Budget ({curr_sym})", min_value=1000, max_value=50000, value=10000, step=1000)
     discount_rate = st.sidebar.slider("Discount Value (%)", min_value=5, max_value=30, value=15, step=1) / 100.0
     nuisance_choice = st.sidebar.selectbox("First-Stage Estimator", ["random_forest", "linear"], index=0)
 else:
     sample_size = st.sidebar.slider("Store-Day Records", min_value=2000, max_value=15000, value=5000, step=1000)
-    budget = st.sidebar.slider("Promotion Budget ($)", min_value=5000, max_value=100000, value=25000, step=5000)
+    budget = st.sidebar.slider(f"Promotion Budget ({curr_sym})", min_value=5000, max_value=100000, value=25000, step=5000)
     discount_rate = st.sidebar.slider("Promo Cost Rate (%)", min_value=2, max_value=15, value=5, step=1) / 100.0
     nuisance_choice = st.sidebar.selectbox("First-Stage Estimator", ["linear", "random_forest"], index=0)
 
@@ -288,8 +304,8 @@ with kpi_col1:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-label">Allocated Capital</div>
-        <div class="kpi-value val-blue">${budget_spent:,.0f}</div>
-        <div class="kpi-subtext sub-muted">Limit: ${budget:,.0f} (100% adherence)</div>
+        <div class="kpi-value val-blue">{curr_sym}{budget_spent:,.0f}</div>
+        <div class="kpi-subtext sub-muted">Limit: {curr_sym}{budget:,.0f} (100% adherence)</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -297,7 +313,7 @@ with kpi_col2:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-label">Incremental Revenue</div>
-        <div class="kpi-value val-green">+${total_incremental:,.0f}</div>
+        <div class="kpi-value val-green">+{curr_sym}{total_incremental:,.0f}</div>
         <div class="kpi-subtext val-green">Causal revenue directly attributable to AI</div>
     </div>
     """, unsafe_allow_html=True)
@@ -307,7 +323,7 @@ with kpi_col3:
     <div class="kpi-card">
         <div class="kpi-label">Campaign ROI</div>
         <div class="kpi-value val-purple">{roi_val:.1f}x</div>
-        <div class="kpi-subtext val-purple">Return per allocated dollar</div>
+        <div class="kpi-subtext val-purple">Return per allocated {curr_code}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -342,7 +358,7 @@ with row2_col1:
         x=["Observed Promotion Sales"],
         y=[model_dml.ate_],
         marker_color="#3B82F6",
-        text=[f"+${model_dml.ate_:.0f}"],
+        text=[f"+{curr_sym}{model_dml.ate_:.0f}"],
         textposition="auto"
     ))
     fig_trap.add_trace(go.Bar(
@@ -350,7 +366,7 @@ with row2_col1:
         x=["Observed Promotion Sales"],
         y=[bias_val],
         marker_color="#F59E0B",
-        text=[f"Bias: -${bias_val:.0f}"],
+        text=[f"Bias: -{curr_sym}{bias_val:.0f}"],
         textposition="auto"
     ))
     fig_trap.update_layout(
@@ -361,7 +377,7 @@ with row2_col1:
         height=310,
         margin=dict(l=20, r=20, t=10, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        yaxis=dict(gridcolor="#1E293B", title="Sales Value ($)"),
+        yaxis=dict(gridcolor="#1E293B", title=f"Sales Value ({curr_sym})"),
         xaxis=dict(showgrid=False)
     )
     st.plotly_chart(fig_trap, use_container_width=True)
@@ -378,7 +394,7 @@ with row2_col2:
     st.markdown(f"""
     <div class="chart-box">
         <div class="chart-title">Allocation Strategy Benchmark</div>
-        <div class="chart-desc">Incremental revenue generated under identical ${budget:,.0f} promotional budget.</div>
+        <div class="chart-desc">Incremental revenue generated under identical {curr_sym}{budget:,.0f} promotional budget.</div>
     """, unsafe_allow_html=True)
     
     colors = ["#10B981", "#F59E0B", "#64748B"]
@@ -397,7 +413,7 @@ with row2_col2:
         height=310,
         showlegend=False,
         margin=dict(l=20, r=20, t=10, b=20),
-        yaxis=dict(gridcolor="#1E293B", title="Incremental Revenue ($)"),
+        yaxis=dict(gridcolor="#1E293B", title=f"Incremental Revenue ({curr_sym})"),
         xaxis=dict(showgrid=False, title="")
     )
     st.plotly_chart(fig_tourney, use_container_width=True)
@@ -483,7 +499,7 @@ with row3_col2:
         margin=dict(l=20, r=20, t=10, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         xaxis=dict(gridcolor="#1E293B", title="% of Candidates Targeted"),
-        yaxis=dict(gridcolor="#1E293B", title="Cumulative Incremental Lift ($)")
+        yaxis=dict(gridcolor="#1E293B", title=f"Cumulative Incremental Lift ({curr_sym})")
     )
     st.plotly_chart(fig_qini, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -503,8 +519,8 @@ display_df = display_df.sort_values(by="Estimated_ITE", ascending=False).reset_i
 
 display_df.rename(columns={
     "CustomerID": "Candidate ID",
-    "Sales": "Historical Sales ($)",
-    "Estimated_ITE": "Predicted Uplift ($)",
+    "Sales": f"Historical Sales ({curr_sym})",
+    "Estimated_ITE": f"Predicted Uplift ({curr_sym})",
     "Decision": "Allocation Decision"
 }, inplace=True)
 
@@ -524,9 +540,9 @@ with col_dl:
     st.write("")
     csv_bytes = display_df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="Export Allocation Schedule (CSV)",
+        label=f"Export Allocation Schedule ({curr_code} CSV)",
         data=csv_bytes,
-        file_name="EconoCausal_Allocation_Schedule.csv",
+        file_name=f"EconoCausal_Allocation_Schedule_{curr_code}.csv",
         mime="text/csv",
         help="Export complete allocation schedule for marketing and operational deployment.",
         use_container_width=True

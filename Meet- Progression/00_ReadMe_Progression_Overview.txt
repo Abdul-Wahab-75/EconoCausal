@@ -32,5 +32,8 @@ LOG INDEX:
 - 05_Dark_Theme_and_Professional_Refinement.txt
   -> Implementing an enterprise Dark Theme, removing all emojis across the entire project for corporate polish, and configuring dark Plotly charts.
 
+- 06_Rupees_Currency_Toggle.txt
+  -> Adding an interactive Indian Rupees (INR) vs US Dollars (USD) currency switcher to the dashboard, scaling all KPIs, charts, tables, and CSV exports dynamically.
+
 More entries will be added here before each upcoming commit!
 ================================================================================
