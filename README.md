@@ -1,25 +1,25 @@
-# 📈 EconoCausal
+# EconoCausal
 
 ### Smart Discount Targeting using Causal AI & Budget Optimization
 
 ---
 
-## 📌 What Is This Project About?
+## What Is This Project About?
 
 Every business gives discounts to increase sales — but **most companies waste money** by giving discounts to the wrong people:
 
 | Customer Type | What Happens | Result |
 |---|---|---|
-| 🟢 **Persuadables** | They **only buy when they get a discount** | ✅ Money well spent |
-| 🔵 **Sure Things** | They would have bought **even without a discount** | ❌ Wasted profit |
-| 🔴 **Lost Causes** | They **won't buy no matter what** | ❌ Wasted budget |
-| 🟡 **Sleeping Dogs** | Discounts actually **annoy them and push them away** | ❌ Negative effect |
+| **Persuadables** | They **only buy when they get a discount** | [TARGET] Money well spent |
+| **Sure Things** | They would have bought **even without a discount** | [SKIP] Wasted profit |
+| **Lost Causes** | They **won't buy no matter what** | [SKIP] Wasted budget |
+| **Sleeping Dogs** | Discounts actually **annoy them and push them away** | [SKIP] Negative effect |
 
 > **Our Goal:** Build a smart system that figures out **which customers are "Persuadables"** and only gives discounts to them — all within a fixed marketing budget.
 
 ---
 
-## 🧠 How Does It Work? (Simple Explanation)
+## How Does It Work? (Simple Explanation)
 
 We use a 3-step pipeline:
 
@@ -58,7 +58,7 @@ We measure success using:
 
 ---
 
-## 🔬 Technical Details (For Those Who Want the Math)
+## Technical Details (For Those Who Want the Math)
 
 <details>
 <summary>Click to expand the mathematical framework</summary>
@@ -105,7 +105,7 @@ Solved using Mixed-Integer Linear Programming (SciPy MILP / HiGHS solver).
 
 ---
 
-## 👥 Team Members & Who Works on What
+## Team Members & Who Works on What
 
 We are a team of **4 members**. Each person owns a specific part of the code, so we can all work simultaneously without conflicts:
 
@@ -118,7 +118,7 @@ We are a team of **4 members**. Each person owns a specific part of the code, so
 
 ---
 
-## 📁 Project Folder Structure
+## Project Folder Structure
 
 ```
 EconoCausal/
@@ -172,7 +172,7 @@ EconoCausal/
 
 ---
 
-## 🗓️ Project Roadmap (12 Weeks)
+##  Project Roadmap (12 Weeks)
 
 ```
 PHASE 1: FOUNDATIONS (Weeks 1-2)
@@ -210,7 +210,7 @@ PHASE 6: DELIVERY (Weeks 11-12)
 
 ---
 
-## 🚀 How to Get Started
+## How to Get Started
 
 ### 1. Clone the Repository
 ```bash
@@ -251,7 +251,7 @@ jupyter lab
 
 ---
 
-## 🤝 How We Work Together on GitHub
+## How We Work Together on GitHub
 
 ### Branch Naming
 Each member creates their own branch to work on:
@@ -286,15 +286,15 @@ git push origin member1/data-pipeline
 ```
 
 ### Golden Rules
-- ✅ Only edit files in YOUR assigned folder
-- ✅ Always run `pytest tests/` before pushing
-- ✅ Use descriptive commit messages
-- ❌ Never push large data files or model binaries (they're gitignored)
-- ❌ Never push directly to `main` — always use Pull Requests
+- [TARGET] Only edit files in YOUR assigned folder
+- [TARGET] Always run `pytest tests/` before pushing
+- [TARGET] Use descriptive commit messages
+- [SKIP] Never push large data files or model binaries (they're gitignored)
+- [SKIP] Never push directly to `main` — always use Pull Requests
 
 ---
 
-## 📦 Key Technologies Used
+##  Key Technologies Used
 
 | Category | Tools |
 |---|---|
@@ -309,7 +309,7 @@ git push origin member1/data-pipeline
 
 ---
 
-## 📊 What Success Looks Like
+##  What Success Looks Like
 
 By the end of this project, we will demonstrate:
 

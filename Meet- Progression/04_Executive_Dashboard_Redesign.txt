@@ -23,10 +23,10 @@ WHAT I DID AS MEET:
    - Built a dynamic Executive Hero Banner with real-time project status and scenario parameters.
 
 2. Created the Top Executive KPI Cards (Zero Text, Pure Financial Impact):
-   - 💰 Allocated Budget: Shows total spend strictly respecting the budget cap (100% on-budget, $0 leakage).
-   - 🚀 Incremental Revenue Lift: Displays the pure causal profit unlocked by our model.
-   - 📈 Campaign ROI: Real-time ROI multiplier per dollar of discount spent.
-   - 🛡️ Wasted Budget Avoided: Exactly how many loyal "Sure Things" were skipped to save company margin.
+   -  Allocated Budget: Shows total spend strictly respecting the budget cap (100% on-budget, $0 leakage).
+   -  Incremental Revenue Lift: Displays the pure causal profit unlocked by our model.
+   -  Campaign ROI: Real-time ROI multiplier per dollar of discount spent.
+   -  Wasted Budget Avoided: Exactly how many loyal "Sure Things" were skipped to save company margin.
 
 3. Built "The Confounding Trap" Visual Comparison (The Aha! Moment):
    - Designed a stacked visual bar chart that reveals the hidden truth:
@@ -47,7 +47,7 @@ WHAT I DID AS MEET:
 
 6. Built the 1-Click Operational Action Center:
    - Clean, color-coded preview of the optimal candidate list (Target vs Skip).
-   - Added a prominent `[ 📥 Download Action CSV ]` button so any marketing or store manager can export the finished target list directly into their email, SMS, or CRM tool with one click.
+   - Added a prominent `[  Download Action CSV ]` button so any marketing or store manager can export the finished target list directly into their email, SMS, or CRM tool with one click.
 
 7. Verification:
    - Compiled with zero errors.

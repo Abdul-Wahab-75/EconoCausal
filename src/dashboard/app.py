@@ -20,142 +20,155 @@ from src.optimization.knapsack import solve_knapsack_discount_allocation
 from src.optimization.policy_allocator import compare_allocation_policies
 from src.evaluation.metrics import compute_uplift_curve, compute_qini_score
 
-# Page Configuration
+# Page Configuration - Clean corporate title, no emoji
 st.set_page_config(
-    page_title="EconoCausal | Executive Promotion Intelligence",
-    page_icon="⚡",
+    page_title="EconoCausal | Enterprise Promotion Optimization",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Executive Visual Styling
+# Dark Theme CSS & Professional Styling
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    /* Gradient Header */
+    /* Main background override */
+    .stApp {
+        background-color: #0B0F19;
+        color: #F8FAFC;
+    }
+
+    /* Executive Hero Header */
     .hero-container {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #1E3A8A 100%);
-        padding: 24px 32px;
-        border-radius: 16px;
+        background: linear-gradient(135deg, #111827 0%, #1E293B 60%, #0F172A 100%);
+        border: 1px solid #1E293B;
+        padding: 28px 32px;
+        border-radius: 12px;
         margin-bottom: 24px;
-        color: white;
-        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
     }
     .hero-badge {
         display: inline-block;
-        background: rgba(59, 130, 246, 0.25);
-        color: #93C5FD;
-        font-size: 12px;
+        background: rgba(59, 130, 246, 0.15);
+        color: #60A5FA;
+        font-size: 11px;
         font-weight: 700;
-        padding: 4px 12px;
-        border-radius: 9999px;
-        letter-spacing: 0.05em;
+        padding: 4px 10px;
+        border-radius: 6px;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        margin-bottom: 8px;
-        border: 1px solid rgba(147, 197, 253, 0.3);
+        margin-bottom: 10px;
+        border: 1px solid rgba(96, 165, 250, 0.25);
     }
     .hero-title {
-        font-size: 28px;
+        font-size: 26px;
         font-weight: 800;
         letter-spacing: -0.02em;
         margin: 0;
-        color: #FFFFFF;
+        color: #F8FAFC;
     }
     .hero-subtitle {
-        font-size: 14px;
+        font-size: 13.5px;
         color: #94A3B8;
         margin-top: 6px;
         margin-bottom: 0;
+        line-height: 1.5;
     }
 
-    /* KPI Cards */
+    /* Executive KPI Cards */
     .kpi-card {
-        background: #FFFFFF;
-        border-radius: 14px;
-        padding: 20px;
-        border: 1px solid #E2E8F0;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background: #111827;
+        border-radius: 10px;
+        padding: 20px 22px;
+        border: 1px solid #1F2937;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        transition: border-color 0.2s ease, transform 0.2s ease;
     }
     .kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+        border-color: #374151;
+        transform: translateY(-1px);
     }
     .kpi-label {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
-        color: #64748B;
+        color: #94A3B8;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 6px;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
     }
     .kpi-value {
-        font-size: 28px;
+        font-size: 27px;
         font-weight: 800;
         letter-spacing: -0.02em;
-        color: #0F172A;
         line-height: 1.1;
     }
     .kpi-subtext {
         font-size: 12px;
         margin-top: 8px;
-        font-weight: 600;
+        font-weight: 500;
     }
-    .text-green { color: #16A34A; }
-    .text-blue { color: #2563EB; }
-    .text-amber { color: #D97706; }
-    .text-purple { color: #7C3AED; }
+    .val-blue { color: #60A5FA; }
+    .val-green { color: #34D399; }
+    .val-purple { color: #A78BFA; }
+    .val-amber { color: #FBBF24; }
+    .sub-muted { color: #64748B; }
 
-    /* Section Containers */
+    /* Chart Containers */
     .chart-box {
-        background: #FFFFFF;
-        border-radius: 14px;
+        background: #111827;
+        border-radius: 10px;
         padding: 20px;
-        border: 1px solid #E2E8F0;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid #1F2937;
         margin-bottom: 20px;
     }
     .chart-title {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 700;
-        color: #0F172A;
+        color: #F1F5F9;
         margin-bottom: 4px;
+        letter-spacing: -0.01em;
     }
     .chart-desc {
-        font-size: 13px;
+        font-size: 12.5px;
         color: #64748B;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
     }
     .insight-pill {
-        display: inline-block;
-        background: #EFF6FF;
-        color: #1D4ED8;
-        border: 1px solid #BFDBFE;
-        border-radius: 8px;
-        padding: 8px 14px;
+        display: block;
+        background: #0F172A;
+        color: #93C5FD;
+        border: 1px solid #1E293B;
+        border-radius: 6px;
+        padding: 10px 14px;
         font-size: 12px;
-        font-weight: 600;
-        margin-top: 10px;
+        font-weight: 500;
+        margin-top: 12px;
+        line-height: 1.4;
+    }
+
+    /* Streamlit widget tweaks */
+    div[data-testid="stSidebar"] {
+        background-color: #0A0E17;
+        border-right: 1px solid #1F2937;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Hero Header
+# Executive Header
 st.markdown("""
 <div class="hero-container">
-    <div class="hero-badge">Enterprise Causal AI & Budget Allocation</div>
-    <h1 class="hero-title">EconoCausal: Optimal Promotion Intelligence</h1>
-    <p class="hero-subtitle">Double Machine Learning (DML) identifies customers who buy <i>only</i> due to discounts; 0-1 Knapsack allocates budget for maximum ROI.</p>
+    <div class="hero-badge">Enterprise Promotion Intelligence</div>
+    <h1 class="hero-title">EconoCausal: Causal Inference & Budget Allocation</h1>
+    <p class="hero-subtitle">Double Machine Learning (DML) identifies customers who purchase strictly due to promotional incentives; 0-1 Knapsack Optimization allocates marketing capital to maximize incremental net return.</p>
 </div>
 """, unsafe_allow_html=True)
 
 # Sidebar Controls
-st.sidebar.markdown("### 🎛️ Executive Control Panel")
+st.sidebar.markdown("### Control Parameters")
 
 dataset_type = st.sidebar.selectbox(
     "Data Source",
@@ -170,16 +183,16 @@ if dataset_type == "Synthetic Benchmark (Known Ground Truth)":
     sample_size = st.sidebar.slider("Customer Population", min_value=1000, max_value=15000, value=5000, step=1000)
     budget = st.sidebar.slider("Marketing Budget ($)", min_value=1000, max_value=50000, value=10000, step=1000)
     discount_rate = st.sidebar.slider("Discount Value (%)", min_value=5, max_value=30, value=15, step=1) / 100.0
-    nuisance_choice = st.sidebar.selectbox("AI Estimator", ["random_forest", "linear"], index=0)
+    nuisance_choice = st.sidebar.selectbox("First-Stage Estimator", ["random_forest", "linear"], index=0)
 else:
     sample_size = st.sidebar.slider("Store-Day Records", min_value=2000, max_value=15000, value=5000, step=1000)
     budget = st.sidebar.slider("Promotion Budget ($)", min_value=5000, max_value=100000, value=25000, step=5000)
     discount_rate = st.sidebar.slider("Promo Cost Rate (%)", min_value=2, max_value=15, value=5, step=1) / 100.0
-    nuisance_choice = st.sidebar.selectbox("AI Estimator", ["linear", "random_forest"], index=0)
+    nuisance_choice = st.sidebar.selectbox("First-Stage Estimator", ["linear", "random_forest"], index=0)
 
 
-# Cached Pipeline Engine
-@st.cache_data(show_spinner="Training Double Machine Learning model & solving Knapsack...")
+# Pipeline Execution with Caching
+@st.cache_data(show_spinner="Computing causal effects and running optimization...")
 def execute_causal_engine(dataset_choice: str, n_records: int, model_type: str, budget_val: float, disc_rate: float):
     if dataset_choice == "Synthetic Benchmark (Known Ground Truth)":
         df = generate_synthetic_data(n_samples=n_records, random_state=42)
@@ -188,12 +201,10 @@ def execute_causal_engine(dataset_choice: str, n_records: int, model_type: str, 
         dml.fit(df[feat_cols], df["Discount"], df["Sales"])
         df["Estimated_ITE"] = dml.ite_estimates_
         
-        # Calculate naive vs causal
         naive_treated = df[df["Discount"] == 1]["Sales"].mean()
         naive_control = df[df["Discount"] == 0]["Sales"].mean()
         naive_lift = naive_treated - naive_control
         
-        # Knapsack
         knapsack_res = solve_knapsack_discount_allocation(
             ite_estimates=df["Estimated_ITE"].values,
             item_prices=df["EstimatedItemPrice"].values,
@@ -202,23 +213,18 @@ def execute_causal_engine(dataset_choice: str, n_records: int, model_type: str, 
             method="milp"
         )
         df["Decision"] = np.where(knapsack_res["selected_flags"] == 1, "TARGET", "SKIP")
-        
-        # Policy comparison
         policy_df = compare_allocation_policies(df, df["Estimated_ITE"].values, budget=budget_val, discount_rate=disc_rate)
         
-        # Archetypes
-        # Persuadables = High ITE; Sure Things = High Sales + Low ITE; Lost Causes = Low Sales + Low ITE
         median_sales = df["Sales"].median()
         median_ite = df["Estimated_ITE"].median()
-        
         archetypes = []
         for _, row in df.iterrows():
             if row["Estimated_ITE"] > median_ite:
                 archetypes.append("Persuadables (Targeted)")
             elif row["Sales"] > median_sales:
-                archetypes.append("Sure Things (Skipped)")
+                archetypes.append("Sure Things (Excluded)")
             else:
-                archetypes.append("Lost Causes (Skipped)")
+                archetypes.append("Lost Causes (Excluded)")
         df["Archetype"] = archetypes
         
         return df, dml, naive_lift, knapsack_res, policy_df, feat_cols
@@ -254,9 +260,9 @@ def execute_causal_engine(dataset_choice: str, n_records: int, model_type: str, 
             if row["Estimated_ITE"] > median_ite:
                 archetypes.append("High Uplift Stores (Targeted)")
             elif row["Sales"] > median_sales:
-                archetypes.append("Natural Flagship Days (Skipped)")
+                archetypes.append("Organic Flagship Volume (Excluded)")
             else:
-                archetypes.append("Low Traffic Baseline (Skipped)")
+                archetypes.append("Low Sensitivity Baseline (Excluded)")
         df["Archetype"] = archetypes
         
         return df, dml, naive_lift, knapsack_res, policy_df, feat_cols
@@ -277,23 +283,22 @@ roi_val = knapsack_out["estimated_roi"]
 targeted_count = knapsack_out["n_targeted"]
 total_count = len(data_df)
 skipped_count = total_count - targeted_count
-wasted_saved = skipped_count * (budget / max(targeted_count, 1)) * 0.25
 
 with kpi_col1:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-label">Allocated Budget</div>
-        <div class="kpi-value text-blue">${budget_spent:,.0f}</div>
-        <div class="kpi-subtext text-blue">100% On-Budget (Cap: ${budget:,.0f})</div>
+        <div class="kpi-label">Allocated Capital</div>
+        <div class="kpi-value val-blue">${budget_spent:,.0f}</div>
+        <div class="kpi-subtext sub-muted">Limit: ${budget:,.0f} (100% adherence)</div>
     </div>
     """, unsafe_allow_html=True)
 
 with kpi_col2:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-label">Incremental Revenue Lift</div>
-        <div class="kpi-value text-green">+${total_incremental:,.0f}</div>
-        <div class="kpi-subtext text-green">Pure causal profit unlocked by AI</div>
+        <div class="kpi-label">Incremental Revenue</div>
+        <div class="kpi-value val-green">+${total_incremental:,.0f}</div>
+        <div class="kpi-subtext val-green">Causal revenue directly attributable to AI</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -301,67 +306,70 @@ with kpi_col3:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-label">Campaign ROI</div>
-        <div class="kpi-value text-purple">{roi_val:.1f}x</div>
-        <div class="kpi-subtext text-purple">For every $1 discount spent</div>
+        <div class="kpi-value val-purple">{roi_val:.1f}x</div>
+        <div class="kpi-subtext val-purple">Return per allocated dollar</div>
     </div>
     """, unsafe_allow_html=True)
 
 with kpi_col4:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-label">Wasted Budget Avoided</div>
-        <div class="kpi-value text-amber">{skipped_count:,} Skipped</div>
-        <div class="kpi-subtext text-amber">Margin saved from loyal buyers</div>
+        <div class="kpi-label">Inefficient Spend Avoided</div>
+        <div class="kpi-value val-amber">{skipped_count:,} Excluded</div>
+        <div class="kpi-subtext val-amber">Margin preserved from organic buyers</div>
     </div>
     """, unsafe_allow_html=True)
 
 st.write("")
 
 # -------------------------------------------------------------
-# 2. SIDE-BY-SIDE VISUAL PROOF (THE "AHA!" & TOURNAMENT)
+# 2. SIDE-BY-SIDE VISUAL PROOF (CONFOUNDING & STRATEGY TOURNAMENT)
 # -------------------------------------------------------------
 row2_col1, row2_col2 = st.columns([1, 1])
 
 with row2_col1:
     st.markdown("""
     <div class="chart-box">
-        <div class="chart-title">💡 The Confounding Trap: Correlation vs. True Causation</div>
-        <div class="chart-desc">Traditional dashboards credit natural foot traffic to promos. DML isolates true lift.</div>
+        <div class="chart-title">Confounding Breakdown: Correlation vs. True Causation</div>
+        <div class="chart-desc">Standard analytics credits organic demand to promotions. Double ML isolates genuine incremental lift.</div>
     """, unsafe_allow_html=True)
     
     bias_val = max(naive_lift_val - model_dml.ate_, 0.0)
     fig_trap = go.Figure()
     
     fig_trap.add_trace(go.Bar(
-        name="True Causal Lift (Our AI)",
-        x=["Promotion Effect"],
+        name="True Causal Lift (DML)",
+        x=["Observed Promotion Sales"],
         y=[model_dml.ate_],
-        marker_color="#2563EB",
+        marker_color="#3B82F6",
         text=[f"+${model_dml.ate_:.0f}"],
         textposition="auto"
     ))
     fig_trap.add_trace(go.Bar(
-        name="Confounding (Foot Traffic / Calendar)",
-        x=["Promotion Effect"],
+        name="Confounding (Calendar / Store Characteristics)",
+        x=["Observed Promotion Sales"],
         y=[bias_val],
         marker_color="#F59E0B",
         text=[f"Bias: -${bias_val:.0f}"],
         textposition="auto"
     ))
     fig_trap.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         barmode="stack",
-        height=320,
+        height=310,
         margin=dict(l=20, r=20, t=10, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        template="plotly_white",
-        yaxis_title="Sales Lift per Day ($)"
+        yaxis=dict(gridcolor="#1E293B", title="Sales Value ($)"),
+        xaxis=dict(showgrid=False)
     )
     st.plotly_chart(fig_trap, use_container_width=True)
     
     pct_bias = (bias_val / max(naive_lift_val, 1e-6)) * 100
     st.markdown(f"""
     <div class="insight-pill">
-        ⚡ <b>Key Finding:</b> {pct_bias:.0f}% of raw promotional sales was organic demand that would have happened anyway!
+        <b>Finding:</b> {pct_bias:.0f}% of observed promotional lift corresponds to organic traffic that occurs independent of discounts.
     </div>
     </div>
     """, unsafe_allow_html=True)
@@ -369,11 +377,11 @@ with row2_col1:
 with row2_col2:
     st.markdown(f"""
     <div class="chart-box">
-        <div class="chart-title">🏆 Head-to-Head Strategy Tournament</div>
-        <div class="chart-desc">Comparing incremental revenue under identical ${budget:,.0f} budget.</div>
+        <div class="chart-title">Allocation Strategy Benchmark</div>
+        <div class="chart-desc">Incremental revenue generated under identical ${budget:,.0f} promotional budget.</div>
     """, unsafe_allow_html=True)
     
-    colors = ["#16A34A", "#F59E0B", "#94A3B8"]
+    colors = ["#10B981", "#F59E0B", "#64748B"]
     fig_tourney = px.bar(
         policy_comp_df,
         x="Policy",
@@ -383,11 +391,14 @@ with row2_col2:
         text_auto=".2s"
     )
     fig_tourney.update_layout(
-        height=320,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=310,
         showlegend=False,
         margin=dict(l=20, r=20, t=10, b=20),
-        template="plotly_white",
-        yaxis_title="Incremental Revenue ($)"
+        yaxis=dict(gridcolor="#1E293B", title="Incremental Revenue ($)"),
+        xaxis=dict(showgrid=False, title="")
     )
     st.plotly_chart(fig_tourney, use_container_width=True)
     
@@ -396,21 +407,21 @@ with row2_col2:
     multiple = causal_gain / heuristic_gain
     st.markdown(f"""
     <div class="insight-pill">
-        🚀 <b>Outperformance:</b> EconoCausal generates <b>{multiple:.1f}x more revenue</b> than traditional high-spender targeting!
+        <b>Efficiency Gain:</b> EconoCausal yields <b>{multiple:.1f}x higher incremental revenue</b> relative to standard top-spender allocation.
     </div>
     </div>
     """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 3. CUSTOMER ARCHETYPES & QINI EVALUATION CURVE
+# 3. POPULATION SEGMENTATION & QINI CURVE
 # -------------------------------------------------------------
 row3_col1, row3_col2 = st.columns([1, 1])
 
 with row3_col1:
     st.markdown("""
     <div class="chart-box">
-        <div class="chart-title">👥 Population Segmentation: Who Gets Discounted?</div>
-        <div class="chart-desc">Smart targeting filters out Sure Things to focus strictly on Persuadables.</div>
+        <div class="chart-title">Population Segmentation (Causal Archetypes)</div>
+        <div class="chart-desc">Budget prioritization filters out sure things to concentrate funds on persuadables.</div>
     """, unsafe_allow_html=True)
     
     arch_counts = data_df["Archetype"].value_counts().reset_index()
@@ -421,13 +432,15 @@ with row3_col1:
         names="Segment",
         values="Count",
         hole=0.55,
-        color_discrete_sequence=["#2563EB", "#F59E0B", "#94A3B8"]
+        color_discrete_sequence=["#3B82F6", "#F59E0B", "#475569"]
     )
     fig_donut.update_layout(
-        height=320,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=310,
         margin=dict(l=20, r=20, t=10, b=20),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.2),
-        template="plotly_white"
+        legend=dict(orientation="h", yanchor="bottom", y=-0.2)
     )
     st.plotly_chart(fig_donut, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -435,8 +448,8 @@ with row3_col1:
 with row3_col2:
     st.markdown("""
     <div class="chart-box">
-        <div class="chart-title">📈 Qini Uplift Curve (Cumulative Gain)</div>
-        <div class="chart-desc">Steeper slope means faster revenue capture with fewer promotional dollars.</div>
+        <div class="chart-title">Qini Uplift Curve (Cumulative Gain)</div>
+        <div class="chart-desc">Higher curve trajectory demonstrates faster incremental revenue capture per candidate.</div>
     """, unsafe_allow_html=True)
     
     curve_data = compute_uplift_curve(
@@ -452,54 +465,55 @@ with row3_col2:
         x=curve_data["FractionTargeted"] * 100,
         y=curve_data["CumulativeQini"],
         mode="lines+markers",
-        name="EconoCausal AI",
-        line=dict(color="#16A34A", width=3)
+        name="EconoCausal Policy",
+        line=dict(color="#10B981", width=3)
     ))
     fig_qini.add_trace(go.Scatter(
         x=curve_data["FractionTargeted"] * 100,
         y=curve_data["RandomBaseline"],
         mode="lines",
-        name="Random Guessing",
+        name="Random Allocation",
         line=dict(color="#EF4444", dash="dash")
     ))
     fig_qini.update_layout(
-        height=320,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=310,
         margin=dict(l=20, r=20, t=10, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        xaxis_title="% of Candidates Targeted",
-        yaxis_title="Cumulative Uplift ($)",
-        template="plotly_white"
+        xaxis=dict(gridcolor="#1E293B", title="% of Candidates Targeted"),
+        yaxis=dict(gridcolor="#1E293B", title="Cumulative Incremental Lift ($)")
     )
     st.plotly_chart(fig_qini, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 4. ACTIONABLE OPERATIONAL LIST & 1-CLICK CSV EXPORT
+# 4. OPERATIONAL ACTION LIST & EXPORT
 # -------------------------------------------------------------
 st.markdown("""
 <div class="chart-box">
-    <div class="chart-title">📋 Operational Action List: Who to Contact</div>
-    <div class="chart-desc">Downloadable decision table generated by the Knapsack Optimizer. Ready for marketing execution.</div>
+    <div class="chart-title">Operational Allocation Schedule</div>
+    <div class="chart-desc">Optimized customer and store decisions generated by the Knapsack solver.</div>
 """, unsafe_allow_html=True)
 
 action_cols = ["CustomerID", "Sales", "Estimated_ITE", "Archetype", "Decision"]
 display_df = data_df[action_cols].copy()
 display_df = display_df.sort_values(by="Estimated_ITE", ascending=False).reset_index(drop=True)
 
-# Format for clean display
 display_df.rename(columns={
     "CustomerID": "Candidate ID",
     "Sales": "Historical Sales ($)",
     "Estimated_ITE": "Predicted Uplift ($)",
-    "Decision": "Knapsack Allocation"
+    "Decision": "Allocation Decision"
 }, inplace=True)
 
 col_tbl, col_dl = st.columns([4, 1])
 with col_tbl:
     st.dataframe(
         display_df.head(15).style.map(
-            lambda v: "color: #16A34A; font-weight: bold;" if v == "TARGET" else "color: #94A3B8;",
-            subset=["Knapsack Allocation"]
+            lambda v: "color: #34D399; font-weight: 600;" if v == "TARGET" else "color: #64748B;",
+            subset=["Allocation Decision"]
         ),
         use_container_width=True,
         height=260
@@ -510,13 +524,18 @@ with col_dl:
     st.write("")
     csv_bytes = display_df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="📥 Download Action CSV",
+        label="Export Allocation Schedule (CSV)",
         data=csv_bytes,
-        file_name="EconoCausal_Targeting_Action_List.csv",
+        file_name="EconoCausal_Allocation_Schedule.csv",
         mime="text/csv",
-        help="Export full target list ready for your email, SMS, or retail marketing platform.",
+        help="Export complete allocation schedule for marketing and operational deployment.",
         use_container_width=True
     )
-    st.success(f"✅ **{targeted_count:,}** selected\n\n❌ **{skipped_count:,}** skipped")
+    st.markdown(f"""
+    <div style="font-size: 12px; color: #94A3B8; margin-top: 10px;">
+        <div><b>Targeted:</b> {targeted_count:,}</div>
+        <div><b>Excluded:</b> {skipped_count:,}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("</div>", unsafe_allow_html=True)

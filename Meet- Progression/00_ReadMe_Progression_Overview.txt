@@ -29,5 +29,8 @@ LOG INDEX:
 - 04_Executive_Dashboard_Redesign.txt
   -> Completely redesigning the frontend dashboard from scratch into a visual-first executive command center with KPI cards, Confounding Trap bar chart, Strategy Tournament, Customer Archetypes, and 1-click action CSV export.
 
+- 05_Dark_Theme_and_Professional_Refinement.txt
+  -> Implementing an enterprise Dark Theme, removing all emojis across the entire project for corporate polish, and configuring dark Plotly charts.
+
 More entries will be added here before each upcoming commit!
 ================================================================================
