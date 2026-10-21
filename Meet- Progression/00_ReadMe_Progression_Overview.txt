@@ -26,5 +26,8 @@ LOG INDEX:
 - 03_Dashboard_Dataset_Toggle_and_Final_Report.txt
   -> Adding real Rossmann data switcher to Streamlit dashboard, fixing ML convergence with feature scaling, and populating the final research report with empirical metrics.
 
+- 04_Executive_Dashboard_Redesign.txt
+  -> Completely redesigning the frontend dashboard from scratch into a visual-first executive command center with KPI cards, Confounding Trap bar chart, Strategy Tournament, Customer Archetypes, and 1-click action CSV export.
+
 More entries will be added here before each upcoming commit!
 ================================================================================
