@@ -32,3 +32,27 @@ def test_covariate_balance():
     assert "SMD" in bal.columns
     assert "Balanced" in bal.columns
     assert bal["SMD"].notna().all()
+
+def test_covariate_balance_calculates_smd_correctly():
+    X = pd.DataFrame({
+        "FeatureA": [1.0, 2.0, 3.0, 4.0]
+    })
+    D = pd.Series([1, 1, 0, 0])
+
+    result = check_covariate_balance(
+        X,
+        D,
+        ["FeatureA"]
+    )
+
+    treated_mean = X.loc[D == 1, "FeatureA"].mean()
+    control_mean = X.loc[D == 0, "FeatureA"].mean()
+    treated_var = X.loc[D == 1, "FeatureA"].var()
+    control_var = X.loc[D == 0, "FeatureA"].var()
+    pooled_std = np.sqrt((treated_var + control_var) / 2.0) + 1e-6
+    expected_smd = abs(treated_mean - control_mean) / pooled_std
+
+    assert len(result) == 1
+    assert result.iloc[0]["Feature"] == "FeatureA"
+    assert result.iloc[0]["SMD"] == round(expected_smd, 4)
+    assert bool(result.iloc[0]["Balanced"]) == (expected_smd < 0.10)
