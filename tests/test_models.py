@@ -17,9 +17,18 @@ def test_dml_estimator_fit_predict():
     assert dml.ite_estimates_ is not None
     assert len(dml.ite_estimates_) == 300
 
+
 def test_covariate_balance():
     df = generate_synthetic_data(n_samples=200, random_state=42)
     features = ["Age", "PriorSpend"]
-    bal = check_covariate_balance(df[features], df["Discount"], features)
+
+    bal = check_covariate_balance(
+        df[features],
+        df["Discount"],
+        features
+    )
+
     assert len(bal) == 2
     assert "SMD" in bal.columns
+    assert "Balanced" in bal.columns
+    assert bal["SMD"].notna().all()
