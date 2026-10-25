@@ -77,3 +77,7 @@ reports/figures/*.png
 reports/figures/*.jpg
 reports/figures/*.svg
 !reports/figures/.gitkeep
+
+# Exclude private progression notes and local reports
+reports/
+Meet- Progression/

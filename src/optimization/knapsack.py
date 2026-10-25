@@ -26,7 +26,8 @@ def solve_knapsack_discount_allocation(
         c_i = cost of discount = price_i * discount_rate
     """
     n_customers = len(ite_estimates)
-    v = np.maximum(ite_estimates * item_prices * 0.10, 0.0)  # Value / incremental gross profit
+    # v_i represents the incremental revenue directly attributable to the discount (ITE)
+    v = np.maximum(ite_estimates, 0.0)
     c = np.maximum(item_prices * discount_rate, 0.50)        # Cost per customer discount
     
     logger.info(f"Setting up Knapsack for {n_customers} candidates with budget ${budget:,.2f}...")

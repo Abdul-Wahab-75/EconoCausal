@@ -19,6 +19,7 @@ from src.models.dml_estimator import DoubleMLEstimator
 from src.optimization.knapsack import solve_knapsack_discount_allocation
 from src.optimization.policy_allocator import compare_allocation_policies
 from src.evaluation.metrics import compute_uplift_curve, compute_qini_score
+from src.utils.currency import convert_currency, SUPPORTED_CURRENCIES, get_currency_meta
 
 # Page Configuration - Clean corporate title, no emoji
 st.set_page_config(
@@ -170,21 +171,34 @@ st.markdown("""
 # Sidebar Controls
 st.sidebar.markdown("### Control Parameters")
 
-# Currency Toggle
-currency_choice = st.sidebar.radio(
-    "Currency Display",
-    ["Rupees (INR)", "US Dollars (USD)"],
-    index=0,
-    horizontal=True,
-    help="Toggle financial figures and allocation reporting between Indian Rupees and US Dollars."
+# Currency Settings & Converter
+st.sidebar.markdown("#### Currency Settings")
+curr_list = list(SUPPORTED_CURRENCIES.keys())
+
+data_currency = st.sidebar.selectbox(
+    "Data Input Currency",
+    curr_list,
+    index=curr_list.index("INR"),
+    format_func=lambda code: f"{code} ({SUPPORTED_CURRENCIES[code]['symbol']} - {SUPPORTED_CURRENCIES[code]['name']})",
+    help="Select the native currency that your source data / transactions are recorded in."
 )
 
-if "Rupees" in currency_choice:
-    curr_sym = "₹"
-    curr_code = "INR"
-else:
-    curr_sym = "$"
-    curr_code = "USD"
+target_currency = st.sidebar.selectbox(
+    "Display & Output Currency",
+    curr_list,
+    index=curr_list.index("INR"),
+    format_func=lambda code: f"{code} ({SUPPORTED_CURRENCIES[code]['symbol']} - {SUPPORTED_CURRENCIES[code]['name']})",
+    help="Select which currency you want all figures, KPIs, optimization budget, and CSV exports converted to."
+)
+
+# Compute conversion multiplier: 1 unit of data_currency -> conv_rate units of target_currency
+conv_rate = convert_currency(1.0, from_curr=data_currency, to_curr=target_currency)
+curr_meta = get_currency_meta(target_currency)
+curr_sym = curr_meta["symbol"]
+curr_code = target_currency
+
+if data_currency != target_currency:
+    st.sidebar.info(f"Live Exchange Rate: 1 {data_currency} = {conv_rate:.4f} {target_currency}")
 
 dataset_type = st.sidebar.selectbox(
     "Data Source",
@@ -283,18 +297,25 @@ def execute_causal_engine(dataset_choice: str, n_records: int, model_type: str, 
         
         return df, dml, naive_lift, knapsack_res, policy_df, feat_cols
 
+# Convert user-selected budget from target currency to data currency for the solver
+budget_in_data_currency = budget / conv_rate if conv_rate > 0 else budget
+
 # Run Engine
 data_df, model_dml, naive_lift_val, knapsack_out, policy_comp_df, active_feats = execute_causal_engine(
-    dataset_type, sample_size, nuisance_choice, float(budget), discount_rate
+    dataset_type, sample_size, nuisance_choice, float(budget_in_data_currency), discount_rate
 )
+
+# Scale all financial figures by conv_rate into the target currency
+converted_dml_ate = model_dml.ate_ * conv_rate
+converted_naive_lift = naive_lift_val * conv_rate
 
 # -------------------------------------------------------------
 # 1. EXECUTIVE KPI BANNER
 # -------------------------------------------------------------
 kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
 
-budget_spent = knapsack_out["total_cost"]
-total_incremental = knapsack_out["total_incremental_value"]
+budget_spent = knapsack_out["total_cost"] * conv_rate
+total_incremental = knapsack_out["total_incremental_value"] * conv_rate
 roi_val = knapsack_out["estimated_roi"]
 targeted_count = knapsack_out["n_targeted"]
 total_count = len(data_df)
@@ -350,15 +371,15 @@ with row2_col1:
         <div class="chart-desc">Standard analytics credits organic demand to promotions. Double ML isolates genuine incremental lift.</div>
     """, unsafe_allow_html=True)
     
-    bias_val = max(naive_lift_val - model_dml.ate_, 0.0)
+    bias_val = max(converted_naive_lift - converted_dml_ate, 0.0)
     fig_trap = go.Figure()
     
     fig_trap.add_trace(go.Bar(
         name="True Causal Lift (DML)",
         x=["Observed Promotion Sales"],
-        y=[model_dml.ate_],
+        y=[converted_dml_ate],
         marker_color="#3B82F6",
-        text=[f"+{curr_sym}{model_dml.ate_:.0f}"],
+        text=[f"+{curr_sym}{converted_dml_ate:,.0f}"],
         textposition="auto"
     ))
     fig_trap.add_trace(go.Bar(
@@ -366,7 +387,7 @@ with row2_col1:
         x=["Observed Promotion Sales"],
         y=[bias_val],
         marker_color="#F59E0B",
-        text=[f"Bias: -{curr_sym}{bias_val:.0f}"],
+        text=[f"Bias: -{curr_sym}{bias_val:,.0f}"],
         textposition="auto"
     ))
     fig_trap.update_layout(
@@ -382,7 +403,7 @@ with row2_col1:
     )
     st.plotly_chart(fig_trap, use_container_width=True)
     
-    pct_bias = (bias_val / max(naive_lift_val, 1e-6)) * 100
+    pct_bias = (bias_val / max(converted_naive_lift, 1e-6)) * 100
     st.markdown(f"""
     <div class="insight-pill">
         <b>Finding:</b> {pct_bias:.0f}% of observed promotional lift corresponds to organic traffic that occurs independent of discounts.
@@ -397,9 +418,13 @@ with row2_col2:
         <div class="chart-desc">Incremental revenue generated under identical {curr_sym}{budget:,.0f} promotional budget.</div>
     """, unsafe_allow_html=True)
     
+    display_policy_df = policy_comp_df.copy()
+    display_policy_df["Incremental_Gain"] = display_policy_df["Incremental_Gain"] * conv_rate
+    display_policy_df["Budget_Spent"] = display_policy_df["Budget_Spent"] * conv_rate
+    
     colors = ["#10B981", "#F59E0B", "#64748B"]
     fig_tourney = px.bar(
-        policy_comp_df,
+        display_policy_df,
         x="Policy",
         y="Incremental_Gain",
         color="Policy",
@@ -418,8 +443,8 @@ with row2_col2:
     )
     st.plotly_chart(fig_tourney, use_container_width=True)
     
-    causal_gain = policy_comp_df.iloc[0]["Incremental_Gain"]
-    heuristic_gain = max(policy_comp_df.iloc[1]["Incremental_Gain"], 1.0)
+    causal_gain = display_policy_df.iloc[0]["Incremental_Gain"]
+    heuristic_gain = max(display_policy_df.iloc[1]["Incremental_Gain"], 1.0)
     multiple = causal_gain / heuristic_gain
     st.markdown(f"""
     <div class="insight-pill">
@@ -476,17 +501,21 @@ with row3_col2:
     )
     qini_score = compute_qini_score(curve_data)
     
+    # Scale Qini curve lift by conversion rate
+    scaled_qini = curve_data["CumulativeQini"] * conv_rate
+    scaled_random = curve_data["RandomBaseline"] * conv_rate
+    
     fig_qini = go.Figure()
     fig_qini.add_trace(go.Scatter(
         x=curve_data["FractionTargeted"] * 100,
-        y=curve_data["CumulativeQini"],
+        y=scaled_qini,
         mode="lines+markers",
         name="EconoCausal Policy",
         line=dict(color="#10B981", width=3)
     ))
     fig_qini.add_trace(go.Scatter(
         x=curve_data["FractionTargeted"] * 100,
-        y=curve_data["RandomBaseline"],
+        y=scaled_random,
         mode="lines",
         name="Random Allocation",
         line=dict(color="#EF4444", dash="dash")
@@ -515,6 +544,8 @@ st.markdown("""
 
 action_cols = ["CustomerID", "Sales", "Estimated_ITE", "Archetype", "Decision"]
 display_df = data_df[action_cols].copy()
+display_df["Sales"] = np.round(display_df["Sales"] * conv_rate, 2)
+display_df["Estimated_ITE"] = np.round(display_df["Estimated_ITE"] * conv_rate, 2)
 display_df = display_df.sort_values(by="Estimated_ITE", ascending=False).reset_index(drop=True)
 
 display_df.rename(columns={

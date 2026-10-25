@@ -151,17 +151,14 @@ EconoCausal/
 │   │   ├── metrics.py             #       └── Qini score, uplift curves, AUUC
 │   │   └── visualizations.py      #       └── Publication-quality plots
 │   ├── dashboard/                 #   └── Interactive web demo
-│   │   └── app.py                 #       └── Streamlit dashboard
+│   │   └── app.py                 #       └── Streamlit dark-mode executive dashboard
 │   └── utils/                     #   └── Shared helpers
 │       ├── config.py              #       └── File paths & default settings
-│       └── logger.py              #       └── Logging utility
+│       ├── logger.py              #       └── Logging utility
+│       └── currency.py            #       └── Multi-currency conversion engine (INR, USD, EUR, GBP, AED, etc.)
 │
-├── models/                        # Saved trained models (.pkl files)
-├── reports/                       # Final report, slides, and charts
-│   ├── figures/
-│   ├── final_report.md
-│   └── presentation_outline.md
-├── tests/                         # Automated tests to verify everything works
+├── models/                        # Saved trained models
+├── tests/                         # Automated test suite (Pytest & statistical refutations)
 │
 ├── .github/                       # GitHub CI pipeline & PR template
 ├── requirements.txt               # Python package dependencies
@@ -321,3 +318,6 @@ By the end of this project, we will demonstrate:
 ---
 
 > **Repository:** [github.com/Abdul-Wahab-75/EconoCausal](https://github.com/Abdul-Wahab-75/EconoCausal)
+
+
+
