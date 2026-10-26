@@ -29,6 +29,9 @@ def test_policy_comparison():
     assert len(comparison) == 3
     assert "Policy" in comparison.columns
     assert "Incremental_Gain" in comparison.columns
+    assert (comparison["Budget_Spent"] <= 500.0 + 1e-5).all()
+    assert comparison["Policy"].notna().all()
+
 def test_knapsack_respects_budget_and_ignores_negative_values():
     ite = np.array([10.0, -50.0, 5.0])
     prices = np.array([20.0, 50.0, 15.0])
