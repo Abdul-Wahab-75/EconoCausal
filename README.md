@@ -1,120 +1,207 @@
-# EconoCausal
+# EconoCausal: Dynamic Pricing & Promotion Optimization
 
-### Smart Discount Targeting using Causal AI & Budget Optimization
+### Smart Promotional Targeting using Double Machine Learning (DML) and 0-1 Knapsack Budget Allocation
+
+[![Python 3.13](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Streamlit App](https://img.shields.io/badge/Streamlit-Executive_Dashboard-FF4B4B.svg)](https://streamlit.io/)
+[![Pytest](https://img.shields.io/badge/Pytest-8%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Causal ML](https://img.shields.io/badge/Causal%20AI-Double%20Machine%20Learning-9cf.svg)](https://econml.azurewebsites.net/)
+
+---
+
+## Interactive Executive Dashboard
+
+Below is our production dark-theme executive command center, providing real-time causal targeting simulations, KPI monitoring, and currency conversion:
+
+![EconoCausal Executive Dashboard Overview](docs/images/dashboard_overview.png)
+
+---
+
+## Working Index
+
+1. [What Is This Project About?](#what-is-this-project-about)
+2. [The Real-World Business Problem (The Discount Trap)](#the-real-world-business-problem-the-discount-trap)
+3. [The 4 Customer Types (Why Traditional AI Fails)](#the-4-customer-types-why-traditional-ai-fails)
+4. [How Does It Work? (The 3-Step Solution)](#how-does-it-work-the-3-step-solution)
+5. [The Discovery: Uncovering the 69.5% Confounding Trap](#the-discovery-uncovering-the-695-confounding-trap)
+6. [Interactive Dashboard Walkthrough & Visual Proof](#interactive-dashboard-walkthrough--visual-proof)
+7. [How We Finished a 4-Week Project in Just 2 Weeks](#how-we-finished-a-4-week-project-in-just-2-weeks)
+8. [The Team & Individual Writeups](#the-team--individual-writeups)
+9. [Project Folder Structure](#project-folder-structure)
+10. [Quickstart Guide](#quickstart-guide)
+11. [Tech Stack](#tech-stack)
 
 ---
 
 ## What Is This Project About?
 
-Every business gives discounts to increase sales — but **most companies waste money** by giving discounts to the wrong people:
-
-| Customer Type | What Happens | Result |
-|---|---|---|
-| **Persuadables** | They **only buy when they get a discount** | [TARGET] Money well spent |
-| **Sure Things** | They would have bought **even without a discount** | [SKIP] Wasted profit |
-| **Lost Causes** | They **won't buy no matter what** | [SKIP] Wasted budget |
-| **Sleeping Dogs** | Discounts actually **annoy them and push them away** | [SKIP] Negative effect |
-
-> **Our Goal:** Build a smart system that figures out **which customers are "Persuadables"** and only gives discounts to them — all within a fixed marketing budget.
+**EconoCausal** is an enterprise decision intelligence system. Instead of giving discounts to everyone, it finds the exact customers who will **only buy if they receive a promotional incentive**, and then uses mathematical optimization to allocate a limited marketing budget to maximize incremental profit.
 
 ---
 
-## How Does It Work? (Simple Explanation)
+## The Real-World Business Problem (The Discount Trap)
 
-We use a 3-step pipeline:
+Every company gives discounts to grow sales. But most companies waste substantial marketing budgets on the wrong people:
 
-### Step 1: Find the Real Effect of Discounts (Causal AI)
+- Marketing teams usually target their **biggest historical spenders** with coupons.
+- At the end of the month, those customers buy a lot of items.
+- The company celebrates, thinking the discounts worked!
 
-Regular AI just looks at patterns like *"people who got discounts bought more."* But that's misleading — maybe those people would have bought anyway!
-
-We use a technique called **Double Machine Learning (DML)** which removes this bias:
-
-1. **First**, train an ML model to predict: *"How much would this customer buy WITHOUT a discount?"*
-2. **Then**, train another ML model to predict: *"How likely is it that this customer was given a discount?"*
-3. **Finally**, subtract out both predictions — what's left is the **true causal effect** of the discount on each customer.
-
-This gives us a score called **ITE (Individual Treatment Effect)** — basically:
-> *"If we give this specific customer a discount, how much EXTRA will they spend because of it?"*
-
-### Step 2: Decide Who Gets the Discount (Budget Optimization)
-
-We have a limited marketing budget (say $5,000). We can't discount everyone. So we solve a mathematical puzzle called the **Knapsack Problem**:
-
-- Each customer has a **value** (their ITE — how much extra they'd spend)
-- Each customer has a **cost** (the discount amount we'd give them)
-- We pick the best combination of customers that **maximizes total extra sales** without going over budget
-
-Think of it like packing a suitcase — you want to fit the most valuable items without exceeding the weight limit.
-
-### Step 3: Measure & Compare (Evaluation)
-
-We compare our smart approach against two baselines:
-- **Random Targeting** — give discounts to random people
-- **High-Spender Heuristic** — traditional marketing approach: discount the biggest spenders
-
-We measure success using:
-- **Qini Curve** — shows how much extra revenue we capture as we target more customers
-- **ROI** — how many dollars of extra sales we get for every dollar spent on discounts
+**The bitter truth:** Those loyal customers were already going to buy anyway at full price. Handing them a discount did not create a single new sale—it simply gave away 15% of the company's profit margin for free. In economics, this is called **Margin Cannibalization**.
 
 ---
 
-## Technical Details (For Those Who Want the Math)
+## The 4 Customer Types (Why Traditional AI Fails)
 
-<details>
-<summary>Click to expand the mathematical framework</summary>
+In promotional marketing, all shoppers fall into one of four distinct groups:
 
-### Causal Model (Partially Linear Regression)
-
-```
-Y = g(X) + θ(X) · D + ε       (Outcome equation)
-D = m(X) + η                    (Treatment equation)
-```
-
-Where:
-- `Y` = Sales (outcome)
-- `D` = Discount given or not (0 or 1)
-- `X` = Customer features (age, spend history, visit frequency, loyalty score)
-- `g(X)` = Expected sales without discount
-- `m(X)` = Probability of getting a discount
-- `θ(X)` = **The causal effect we want to estimate (ITE)**
-
-### DML Cross-Fitting Procedure
-
-1. Split data into K folds
-2. For each fold, train nuisance models on the OTHER folds to predict `g(X)` and `m(X)`
-3. Compute residuals: `Ỹ = Y - ĝ(X)` and `D̃ = D - m̂(X)`
-4. Regress `Ỹ` on `D̃` to get the unbiased treatment effect `θ̂`
-
-### Budget Optimization (0-1 Knapsack)
-
-```
-Maximize:    Σ (ITE_i × price_i) × t_i
-Subject to:  Σ (price_i × discount_rate) × t_i ≤ Budget
-             t_i ∈ {0, 1}
-```
-
-Solved using Mixed-Integer Linear Programming (SciPy MILP / HiGHS solver).
-
-### Key Assumptions
-
-1. **Unconfoundedness** — We observe all the factors that influence both discount assignment and purchasing
-2. **Positivity** — Every customer has some chance of receiving (or not receiving) a discount
-3. **SUTVA** — One customer's discount doesn't affect another customer's buying decision
-
-</details>
-
----
-
-## Team Members & Who Works on What
-
-We are a team of **4 members**. Each person owns a specific part of the code, so we can all work simultaneously without conflicts:
-
-| # | Role | What They Do | Code Ownership | Notebook |
+| Customer Group | Behavior Without Discount | Behavior With Discount | Marketing Action | Business Impact |
 |---|---|---|---|---|
-| 1 | **Data Engineer** | Loads data, cleans it, creates useful features | `src/data/` | `01_eda_and_preprocessing.ipynb` |
-| 2 | **Causal Modeler** | Builds the DML model, estimates treatment effects, runs validity checks | `src/models/` | `02_causal_dml_modeling.ipynb` |
-| 3 | **Optimization Analyst** | Solves the budget allocation problem, compares targeting strategies | `src/optimization/` | `03_budget_optimization.ipynb` |
-| 4 | **Project Lead & Evaluator** | Measures performance (Qini curves), builds the demo dashboard, writes the report | `src/evaluation/` + `src/dashboard/` | `04_evaluation_and_insights.ipynb` |
+| **Persuadables** | Do not buy | **Buy!** | **[TARGET]** | Direct incremental sales generated by the discount |
+| **Sure Things** | Buy anyway | Buy anyway | **[EXCLUDE]** | Organic shoppers; giving discounts throws away margin |
+| **Lost Causes** | Do not buy | Do not buy | **[EXCLUDE]** | Uninterested shoppers; spending budget on them is wasted |
+| **Sleeping Dogs** | Browse quietly | Get annoyed & unsubscribe | **[DO NOT TOUCH]** | Annoyed by spam; discounts cause churn |
+
+> **Why standard machine learning fails:** Standard models only predict *"Who is likely to buy?"* Naturally, the AI points to the **Sure Things** because their purchase probability is already high. EconoCausal asks the right question: *"Who will buy ONLY because of the discount?"*
+
+---
+
+## How Does It Work? (The 3-Step Solution)
+
+```
+[Customer Data] ──> [Step 1: Double Machine Learning] ──> [Step 2: 0-1 Knapsack Solver] ──> [Step 3: Executive Dashboard]
+                     Isolates True Causal Lift (ITE)      Allocates Budget Optimally        Visual Proof & 1-Click CSV
+```
+
+### Step 1: Isolate Genuine Lift with Double Machine Learning (DML)
+Standard regression gets tricked by external factors (called confounders) like holiday paydays or store footfall. We implement **Partially Linear Double Machine Learning (Chernozhukov et al. 2018)**:
+1. Predict what sales would be without a promotion: $E[Y|X]$.
+2. Predict the probability of a promotion being run: $E[D|X]$.
+3. Subtract both predictions out using out-of-fold cross-fitting:
+   $$\tilde{Y} = Y - \hat{g}(X), \quad \tilde{D} = D - \hat{m}(X)$$
+4. Regress clean residualized sales on clean residualized promotions. All outside noise is cancelled out, isolating the pure **Individual Treatment Effect (ITE)**.
+
+### Step 2: Optimal Capital Allocation (0-1 Knapsack MILP)
+Once we know each customer's predicted incremental lift, we solve an exact 0-1 Knapsack problem using Mixed-Integer Linear Programming (SciPy HiGHS solver):
+$$\max \sum_{i=1}^N \text{ITE}_i \cdot t_i \quad \text{subject to} \quad \sum_{i=1}^N (\text{Price}_i \cdot \text{DiscountRate}) \cdot t_i \le \text{Budget}, \quad t_i \in \{0, 1\}$$
+This guarantees that we select the most profitable combination of customers without exceeding the marketing budget limit by even a single rupee.
+
+### Step 3: Actionable Operational Schedule
+The system generates a deployment-ready list of targeted candidates that can be downloaded as a CSV and uploaded directly into CRM tools like Salesforce, HubSpot, or Braze.
+
+---
+
+## The Discovery: Uncovering the 69.5% Confounding Trap
+
+When we evaluated our pipeline on the real-world **Rossmann Store Sales dataset (1,115 stores, 1,000,000+ transaction records)**, we made an eye-opening empirical discovery:
+
+```
+Observed Promotion Lift (Raw Average) : +₹2,270.82 per store-day
+True Causal Lift (Isolated by DML)    : +₹693.11 ± ₹60.18 per store-day
+────────────────────────────────────────────────────────────────────────
+Confounding Bias Removed              : +₹1,577.70 (69.5% was non-causal organic sales)
+```
+
+**What this means:** 69.5% of what standard analytics credited to promotions was actually organic footfall, weekend seasonality, and city-center flagship volume that would have happened anyway. EconoCausal prevented the enterprise from wasting budget on baseline sales.
+
+---
+
+## Interactive Dashboard Walkthrough & Visual Proof
+
+### 1. Executive KPI Cards
+The top banner shows the metrics leadership cares about: budget adherence, net causal revenue, return on investment, and organic margin protected.
+
+![Dashboard KPIs](docs/images/dashboard_kpis.png)
+
+### 2. Side-by-Side Visual Proof (Confounding & Strategy Tournament)
+- **Left (Confounding Breakdown):** A stacked bar chart separating genuine causal lift from organic demand bias.
+- **Right (Allocation Strategy Benchmark):** Head-to-head comparison showing that our Causal DML approach delivers **2.4x higher incremental revenue** than traditional high-spender targeting under the exact same budget.
+
+![Dashboard Visual Proof](docs/images/dashboard_charts.png)
+
+### 3. Universal Multi-Currency Engine
+Built-in live currency conversion engine (`src/utils/currency.py`) supporting 9 major international currencies:
+- **INR (₹)**, **USD ($)**, **EUR (€)**, **GBP (£)**, **AED (د.إ)**, **CAD (CA$)**, **AUD (A$)**, **JPY (¥)**, **SGD (S$)**
+- Store managers can choose any data input currency and display currency. All KPIs, charts, and downloadable schedules scale dynamically in real time.
+
+---
+
+## How We Finished a 4-Week Project in Just 2 Weeks
+
+Our internship assignment was officially scheduled for **1 Month (4 Weeks)**. Our team finished the complete production deliverable in **2 weeks (14 days)** through four clear engineering practices:
+
+```
+Week 1: Data Contracts & Parallel Pipeline Setup ──> DML Model Tested (< 2.5% Error)
+Week 2: Knapsack MILP Optimization ──> Dark Dashboard & Multi-Currency Engine ──> Final Delivery
+```
+
+1. **Parallel Execution via Early Data Contracts (No Bottlenecks):**
+   Instead of waiting for data engineering to finish before starting the machine learning model, Meet locked in the exact data schema and interface inputs on Day 1. Shravani produced a ground-truth mock data generator on Day 2, allowing Abdul (DML modeling), Prince (Knapsack optimization), and Meet (dashboard UI) to build all 4 pillars at the exact same time.
+
+2. **Judicious Use of Developer Acceleration Tools:**
+   - **Meet** leveraged **Google Antigravity** to scaffold clean package structures, automate testing orchestration, and quickly script report/PowerPoint generation.
+   - **Shravani** utilized AI assistance to write robust Pandas date-time transformations across Rossmann's 1,115 stores.
+   - **Abdul** used AI mathematical tools to verify the Robinson transformation score equations against open-source implementations.
+   - **Prince** verified SciPy MILP HiGHS constraint matrices with algorithmic tools.
+   Automating boilerplate syntax allowed the team to spend 100% of their energy on causal econometrics, optimization logic, and business validity.
+
+3. **Strict Directory Isolation (Zero Merge Conflicts):**
+   Each member worked inside their own isolated module (`src/data/`, `src/models/`, `src/optimization/`, `src/dashboard/`). As a result, the team experienced zero Git merge collisions during the entire sprint.
+
+4. **15-Minute Daily Agile Syncs:**
+   Every morning, Meet led a 15-minute standup: What did you build yesterday? What are you shipping today? Are there any blockers? Dependencies were identified and resolved in hours instead of days.
+
+---
+
+## The Team & Individual Writeups
+
+We are a team of 4 dedicated engineers. Here is the official log of what each person built across Week 1 and Week 2:
+
+### Meet Nakum (Team Leader, Frontend Architect & Evaluator)
+- **Week 1:**
+  - Designed the end-to-end system architecture, Git branching strategy, and the Directed Acyclic Graph (DAG).
+  - Used Google Antigravity to quickly set up automated testing frameworks, package configs, and continuous documentation.
+  - Implemented the evaluation engine (`src/evaluation/metrics.py`) calculating cumulative uplift curves and normalized Qini scores (AUUC).
+  - Authored evaluation notebook `04_evaluation_and_insights.ipynb`.
+- **Week 2:**
+  - Redesigned the entire frontend into an enterprise Streamlit command center (`src/dashboard/app.py`) with an Executive Dark Theme (#0B0F19) and card layouts.
+  - Engineered the universal multi-currency engine (`src/utils/currency.py`) supporting 9 global currencies with live API rates and offline fallback.
+  - Connected the currency converter to dynamically scale all dashboard metrics, charts, budget constraints, and tables.
+  - Conducted the deep audit against Infotact Assignment Letter `ITS/DSML/1233`, ran 7 statistical refutation tests, and authored the 12-slide PowerPoint presentation deck.
+
+### Md Abdul Wahab (Causal AI Modeler & Econometrician)
+- **Week 1:**
+  - Researched and implemented the Double Machine Learning (DML) Robinson transformation from first principles in `src/models/dml_estimator.py`.
+  - Built K-Fold cross-fitting to partition data and compute orthogonal residuals, completely avoiding regularization bias.
+  - Built `src/models/nuisance.py` with flexible regressors. Solved training bottlenecks on 1M rows by adding `StandardScaler()` pipelines, slashing training time from 34s to 0.09s.
+  - Validated causal recovery on synthetic ground-truth data (recovered true effect within 2.3% error).
+- **Week 2:**
+  - Built statistical refutation tests in `src/models/robustness.py`: Placebo Treatment Permutation Tests and Covariate Balance checks (Standardized Mean Differences).
+  - Proved placebo treatment effect collapsed to $0.099 ($p = 0.887$, zero spurious correlation).
+  - Verified cross-fitting stability across K=2, 3, 5 folds (<0.8% variance).
+  - Authored modeling notebook `02_causal_dml_modeling.ipynb`.
+
+### Prince Yadav (Optimization Analyst & Algorithms Engineer)
+- **Week 1:**
+  - Formulated the promotion allocation dilemma into a clean 0-1 Knapsack problem.
+  - Programmed the exact Mixed-Integer Linear Programming (MILP) solver in `src/optimization/knapsack.py` using SciPy's HiGHS branch-and-bound solver.
+  - Implemented a fast greedy value-to-cost ratio ($v_i / c_i$) ranking heuristic as an instant fallback.
+- **Week 2:**
+  - Built the multi-policy Strategy Tournament engine in `src/optimization/policy_allocator.py`.
+  - Benchmarked Causal Knapsack vs. High-Spender Heuristics vs. Random Targeting under identical budgets, proving up to 2.4x higher incremental revenue.
+  - Calibrated objective value scaling to directly reflect true incremental revenue.
+  - Authored unit tests in `tests/test_optimization.py` and optimization notebook `03_budget_optimization.ipynb`.
+
+### Shravani Balraj Umbarje (Data Engineer & Pipeline Architect)
+- **Week 1:**
+  - Created the ground-truth synthetic data generator (`src/data/synthetic.py`) with known causal effects for benchmarking.
+  - Ingested the raw Rossmann Store Sales dataset (1M+ rows across 1,115 stores) in `src/data/load_data.py`.
+  - Filtered closed days and positive sales, yielding 844,338 clean trading records, and merged store-level metadata (`store.csv`).
+- **Week 2:**
+  - Engineered 17 business and temporal confounder features in `src/data/features.py` (day-of-week, quarter seasonality, log footfall, competitor distance, holiday flags).
+  - Built feature selection guards (`get_rossmann_feature_cols`) to prevent target leakage into nuisance models.
+  - Authored data unit tests in `tests/test_data.py` and data notebook `01_eda_and_preprocessing.ipynb`.
 
 ---
 
@@ -122,92 +209,38 @@ We are a team of **4 members**. Each person owns a specific part of the code, so
 
 ```
 EconoCausal/
+├── data/                          # Data store
+│   ├── raw/                       # Raw downloads (Rossmann store sales)
+│   ├── processed/                 # Feature-engineered datasets
+│   └── synthetic/                 # Benchmarks with known causal ground truth
 │
-├── data/                          # All datasets go here
-│   ├── raw/                       #   └── Original downloaded data
-│   ├── processed/                 #   └── Cleaned & ready-to-use data
-│   └── synthetic/                 #   └── Fake data we generate for testing
+├── docs/                          # Documentation assets
+│   └── images/                    # Dashboard UI screenshots and figures
 │
-├── notebooks/                     # Jupyter notebooks (one per team member)
+├── notebooks/                     # Executed Jupyter notebooks
 │   ├── 01_eda_and_preprocessing.ipynb
 │   ├── 02_causal_dml_modeling.ipynb
 │   ├── 03_budget_optimization.ipynb
 │   └── 04_evaluation_and_insights.ipynb
 │
-├── src/                           # Main Python code (importable package)
-│   ├── data/                      #   └── Data loading, cleaning, feature creation
-│   │   ├── load_data.py
-│   │   ├── preprocess.py
-│   │   ├── synthetic.py           #       └── Generates fake customer data with known answers
-│   │   └── features.py
-│   ├── models/                    #   └── Causal inference engine
-│   │   ├── nuisance.py            #       └── First-stage ML predictors
-│   │   ├── dml_estimator.py       #       └── Double ML estimator (the core!)
-│   │   └── robustness.py          #       └── Placebo tests & balance checks
-│   ├── optimization/              #   └── Budget allocation solver
-│   │   ├── knapsack.py            #       └── 0-1 Knapsack MILP solver
-│   │   └── policy_allocator.py    #       └── Compare Causal vs Heuristic vs Random
-│   ├── evaluation/                #   └── Metrics & charts
-│   │   ├── metrics.py             #       └── Qini score, uplift curves, AUUC
-│   │   └── visualizations.py      #       └── Publication-quality plots
-│   ├── dashboard/                 #   └── Interactive web demo
-│   │   └── app.py                 #       └── Streamlit dark-mode executive dashboard
-│   └── utils/                     #   └── Shared helpers
-│       ├── config.py              #       └── File paths & default settings
-│       ├── logger.py              #       └── Logging utility
-│       └── currency.py            #       └── Multi-currency conversion engine (INR, USD, EUR, GBP, AED, etc.)
+├── src/                           # Production Python package
+│   ├── data/                      # Ingestion, cleaning, and feature pipelines
+│   ├── models/                    # Double Machine Learning estimator & refutations
+│   ├── optimization/              # 0-1 Knapsack MILP solver & tournament engine
+│   ├── evaluation/                # Qini uplift curves, AUUC, and plotters
+│   ├── dashboard/                 # Streamlit executive dark-mode web application
+│   └── utils/                     # Config, logger, and multi-currency converter
 │
-├── models/                        # Saved trained models
-├── tests/                         # Automated test suite (Pytest & statistical refutations)
-│
-├── .github/                       # GitHub CI pipeline & PR template
+├── tests/                         # Pytest automated test suite (8/8 passing)
 ├── requirements.txt               # Python package dependencies
-├── environment.yml                # Conda environment file
-├── setup.py                       # Makes 'src' installable as a package
+├── environment.yml                # Conda environment definition
+├── setup.py                       # Package installation script
 └── README.md                      # ← You are here!
 ```
 
 ---
 
-##  Project Roadmap (12 Weeks)
-
-```
-PHASE 1: FOUNDATIONS (Weeks 1-2)
-├── Study Double ML theory & causal inference basics
-├── Draw the Causal DAG (cause-and-effect diagram)
-└── Set up the Git repo, environment, and CI pipeline
-
-PHASE 2: DATA (Weeks 3-4)
-├── Download real datasets (Rossmann Store Sales / UCI Online Retail)
-├── Build the synthetic data generator (fake data with known answers for testing)
-├── Clean data, handle missing values, create features
-└── Run Exploratory Data Analysis (EDA)
-
-PHASE 3: CAUSAL MODEL (Weeks 5-6)
-├── Train first-stage ML models (predict sales & discount probability)
-├── Implement K-fold cross-fitting
-└── Get initial treatment effect estimates (ATE & ITE)
-
-PHASE 4: VALIDATION (Weeks 7-8)
-├── Run Placebo Test (shuffle treatment → effect should be ~0)
-├── Check Covariate Balance (treated vs control groups should look similar)
-└── Tune hyperparameters for better estimates
-
-PHASE 5: OPTIMIZATION (Weeks 9-10)
-├── Build the Knapsack budget solver
-├── Compare Causal Policy vs High-Spender Heuristic vs Random
-└── Integrate the full pipeline: Data → Model → Optimizer
-
-PHASE 6: DELIVERY (Weeks 11-12)
-├── Generate Qini curves, ROI tables, and publication charts
-├── Build the interactive Streamlit demo dashboard
-├── Write the final report and prepare the presentation (12 slides)
-└── Rehearse and present!
-```
-
----
-
-## How to Get Started
+## Quickstart Guide
 
 ### 1. Clone the Repository
 ```bash
@@ -215,109 +248,46 @@ git clone https://github.com/Abdul-Wahab-75/EconoCausal.git
 cd EconoCausal
 ```
 
-### 2. Set Up Your Environment
+### 2. Set Up Virtual Environment & Install Dependencies
 ```bash
-# Create a virtual environment
-python -m venv venv
-
-# Activate it
 # Windows:
+python -m venv venv
 venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
 
-# Install all dependencies
+# macOS / Linux:
+# source venv/bin/activate
+
 pip install -r requirements.txt
 pip install -e .
 ```
 
-### 3. Run the Tests (Make Sure Everything Works)
+### 3. Run Automated Tests
 ```bash
 pytest tests/ -v
 ```
 
-### 4. Launch the Demo Dashboard
+### 4. Launch the Executive Dashboard
 ```bash
 streamlit run src/dashboard/app.py
 ```
-
-### 5. Open the Notebooks
-```bash
-jupyter lab
-```
+Open your browser at `http://localhost:8501` to interactively adjust budgets, change currencies, and simulate promotional policies in real time.
 
 ---
 
-## How We Work Together on GitHub
+## Tech Stack
 
-### Branch Naming
-Each member creates their own branch to work on:
-```
-member1/data-pipeline
-member2/dml-modeling
-member3/knapsack-optimization
-member4/evaluation-dashboard
-```
-
-### Daily Workflow
-```bash
-# 1. Get the latest code
-git checkout main
-git pull origin main
-
-# 2. Switch to your branch
-git checkout -b member1/data-pipeline
-
-# 3. Make your changes in YOUR folder only
-#    (Member 1 works in src/data/, Member 2 in src/models/, etc.)
-
-# 4. Test your changes
-pytest tests/ -v
-
-# 5. Commit and push
-git add .
-git commit -m "feat(data): added customer segmentation features"
-git push origin member1/data-pipeline
-
-# 6. Open a Pull Request on GitHub to merge into main
-```
-
-### Golden Rules
-- [TARGET] Only edit files in YOUR assigned folder
-- [TARGET] Always run `pytest tests/` before pushing
-- [TARGET] Use descriptive commit messages
-- [SKIP] Never push large data files or model binaries (they're gitignored)
-- [SKIP] Never push directly to `main` — always use Pull Requests
-
----
-
-##  Key Technologies Used
-
-| Category | Tools |
+| Category | Tools & Libraries |
 |---|---|
-| **Causal Inference** | EconML, DoubleML, DoWhy |
-| **Machine Learning** | Scikit-learn, XGBoost, LightGBM |
-| **Optimization** | SciPy (MILP/HiGHS), PuLP |
-| **Visualization** | Matplotlib, Seaborn, Plotly |
-| **Dashboard** | Streamlit |
-| **Data Processing** | Pandas, NumPy |
-| **Testing** | Pytest |
-| **CI/CD** | GitHub Actions |
+| **Causal Inference** | Double Machine Learning (DML), Partially Linear Regression (PLR), Neyman Orthogonality |
+| **Machine Learning** | Scikit-Learn (RidgeCV, LogisticRegression, RandomForest), NumPy, Pandas |
+| **Optimization** | SciPy (HiGHS Mixed-Integer Linear Programming / MILP, linprog) |
+| **Frontend & UI** | Streamlit, Plotly Express & Graph Objects, Custom Modern Dark CSS |
+| **Currency Engine** | Real-time exchange rate API with built-in offline fallbacks (9 currencies) |
+| **Quality & Testing** | Pytest, Placebo Permutation Tests, Standardized Mean Difference (SMD) |
+| **Acceleration** | Google Antigravity, Playwright, Python-PPTX |
 
 ---
 
-##  What Success Looks Like
-
-By the end of this project, we will demonstrate:
-
-1. **Causal DML targeting outperforms random targeting** — our Qini curve is significantly above the random baseline
-2. **Budget efficiency** — our Knapsack allocation achieves higher ROI than the traditional "discount the big spenders" approach
-3. **Robustness** — Placebo tests confirm our effect is real (not a statistical artifact)
-4. **A working demo** — stakeholders can interactively adjust budgets and see results in real-time via the Streamlit dashboard
-
----
-
-> **Repository:** [github.com/Abdul-Wahab-75/EconoCausal](https://github.com/Abdul-Wahab-75/EconoCausal)
-
-
-
+> **Project Repository:** [github.com/Abdul-Wahab-75/EconoCausal](https://github.com/Abdul-Wahab-75/EconoCausal)  
+> **Developed by:** Meet Nakum (Lead), Md Abdul Wahab, Prince Yadav, and Shravani Balraj Umbarje  
+> **Internship:** Infotact Solutions (Ref: `ITS/DSML/1233`)
