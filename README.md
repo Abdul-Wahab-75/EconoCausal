@@ -29,8 +29,9 @@ Below is our production dark-theme executive command center, providing real-time
 7. [How We Finished a 4-Week Project in Just 2 Weeks](#how-we-finished-a-4-week-project-in-just-2-weeks)
 8. [The Team & Individual Writeups](#the-team--individual-writeups)
 9. [Project Folder Structure](#project-folder-structure)
-10. [Quickstart Guide](#quickstart-guide)
-11. [Tech Stack](#tech-stack)
+10. [How to Use Our Project & Model (Data Preparation Guide)](#how-to-use-our-project--model-data-preparation-guide)
+11. [Quickstart Guide](#quickstart-guide)
+12. [Tech Stack](#tech-stack)
 
 ---
 
@@ -237,6 +238,91 @@ EconoCausal/
 ├── setup.py                       # Package installation script
 └── README.md                      # ← You are here!
 ```
+
+---
+
+## How to Use Our Project & Model (Data Preparation Guide)
+
+If you want to plug in your own company or store data into EconoCausal, follow these straightforward steps:
+
+### 1. Where to Keep Your Data
+Save your raw CSV or Parquet files in the `data/raw/` directory:
+```
+data/
+├── raw/
+│   ├── custom_customer_data.csv    # <-- Put your raw dataset here!
+│   └── rossmann/                   # Pre-bundled retail dataset
+└── processed/                      # Cleaned output saved here
+```
+
+### 2. How Your Data Should Look (Required Columns)
+For causal machine learning to work, your dataset needs **4 mandatory columns** and at least **2 to 5 confounder features**:
+
+#### Mandatory Columns:
+| Column Name | Data Type | What It Means | Example |
+|---|---|---|---|
+| **`CustomerID`** | String / Int | Unique ID for each customer, account, or store | `CUST_001`, `STORE_42` |
+| **`Discount`** | Binary (`0` or `1`) | Treatment indicator: `1` if they received a discount/coupon, `0` if not | `1`, `0` |
+| **`Sales`** | Float / Numeric | Outcome variable: Total purchase amount or transaction revenue | `1250.00`, `340.50` |
+| **`EstimatedItemPrice`** | Float / Numeric | Baseline basket value / price (used by Knapsack: `Cost = Price × Discount%`) | `450.00`, `120.00` |
+
+#### Confounder Features (Columns the AI Uses to De-bias):
+In causal inference, **confounders** are variables that influence both *who gets discounts* and *how much they spend*. You should include:
+- **Customer Features:** `PriorSpend` (past 90-day spend), `VisitFrequency` (monthly visits), `LoyaltyScore` (1 to 10), `RecencyDays` (days since last purchase).
+- **Store Features:** `Footfall` / `Customers`, `DayOfWeek`, `Month`, `IsWeekend`, `CompetitionDistance`.
+
+#### Sample Clean CSV Format:
+```csv
+CustomerID,Discount,Sales,EstimatedItemPrice,PriorSpend,VisitFrequency,LoyaltyScore,RecencyDays
+CUST_0001,1,1450.00,850.00,4500.00,6,7.5,4
+CUST_0002,0,0.00,400.00,1200.00,1,2.0,45
+CUST_0003,1,650.00,650.00,800.00,2,3.5,18
+CUST_0004,0,2100.00,1200.00,9500.00,12,9.0,2
+```
+
+### 3. How to Clean Your Data (Preprocessing Best Practices)
+Before feeding data to the model, ensure these 4 quick data hygiene checks:
+1. **Remove Inactive / Closed Periods:** If a retail store was closed, filter it out (`Sales > 0`). Zero-sales days when a shop was closed do not represent consumer choice.
+2. **Handle Missing Values:** Fill missing numeric confounders (like competitor distance) with their median value:
+   ```python
+   df["CompetitionDistance"] = df["CompetitionDistance"].fillna(df["CompetitionDistance"].median())
+   ```
+3. **Verify the Overlap (Positivity) Condition:** Make sure that across different customer tiers, there are both discounted (`Discount=1`) and non-discounted (`Discount=0`) individuals. If 100% of a group received a discount, causal AI cannot estimate the counterfactual control baseline!
+4. **Scale Skewed Footfall / Spend:** Heavy right-skewed variables benefit from a log transformation:
+   ```python
+   df["LogCustomers"] = np.log1p(df["Customers"])
+   ```
+
+### 4. Running the Causal Model in Python (3 Lines of Code)
+You can train and optimize on your data directly via Python:
+```python
+import pandas as pd
+from src.models.dml_estimator import DoubleMLEstimator
+from src.optimization.knapsack import solve_knapsack_discount_allocation
+
+# 1. Load data
+df = pd.read_csv("data/raw/custom_customer_data.csv")
+features = ["PriorSpend", "VisitFrequency", "LoyaltyScore", "RecencyDays"]
+
+# 2. Fit Double Machine Learning to isolate true ITE
+dml = DoubleMLEstimator(n_splits=3, nuisance_type="linear", backend="native")
+dml.fit(df[features], df["Discount"], df["Sales"])
+ite_scores = dml.ite_estimates_
+
+# 3. Solve 0-1 Knapsack under a ₹25,000 budget
+allocation = solve_knapsack_discount_allocation(
+    ite_estimates=ite_scores,
+    item_prices=df["EstimatedItemPrice"].values,
+    budget=25000.0,
+    discount_rate=0.10,
+    method="milp"
+)
+
+print(f"Targeted Customers: {allocation['n_targeted']}")
+print(f"Incremental Revenue Captured: ₹{allocation['total_incremental_value']:,.2f}")
+```
+
+Or simply launch the dashboard (`streamlit run src/dashboard/app.py`), select your parameters, and click **Export Allocation Schedule (CSV)**!
 
 ---
 
