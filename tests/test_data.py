@@ -3,6 +3,7 @@ import pandas as pd
 
 from src.data.synthetic import generate_synthetic_data
 from src.data.features import engineer_features, get_rossmann_feature_cols
+from src.data.load_data import load_rossmann
 
 
 def test_synthetic_data_generation():
@@ -91,3 +92,55 @@ def test_rossmann_feature_columns_exclude_target_and_identifiers():
     assert "Sales" not in features
     assert "Discount" not in features
     assert "LogSales" not in features
+def test_load_rossmann_raises_when_train_file_is_missing(tmp_path):
+    with pytest.raises(FileNotFoundError, match="train.csv not found"):
+        load_rossmann(raw_dir=tmp_path)
+
+def test_load_rossmann_filters_rows_and_merges_store_metadata(tmp_path):
+    raw_dir = tmp_path / "rossmann"
+    raw_dir.mkdir()
+
+    train = pd.DataFrame({
+        "Store": [1, 1, 2, 2],
+        "DayOfWeek": [1, 2, 3, 4],
+        "Date": [
+            "2015-01-05",
+            "2015-01-06",
+            "2015-01-07",
+            "2015-01-08",
+        ],
+        "Sales": [100.0, 0.0, 200.0, 300.0],
+        "Customers": [20, 0, 30, 40],
+        "Open": [1, 1, 0, 1],
+        "Promo": [1, 0, 1, 0],
+        "StateHoliday": ["0", "0", "a", "0"],
+        "SchoolHoliday": [0, 0, 1, 0],
+    })
+
+    store = pd.DataFrame({
+        "Store": [1, 2],
+        "StoreType": ["a", "b"],
+        "Assortment": ["a", "c"],
+        "CompetitionDistance": [1000.0, 2000.0],
+        "Promo2": [0, 1],
+    })
+
+    train.to_csv(raw_dir / "train.csv", index=False)
+    store.to_csv(raw_dir / "store.csv", index=False)
+
+    result = load_rossmann(raw_dir=raw_dir)
+
+    assert len(result) == 2
+    assert result["CustomerID"].tolist() == [1, 2]
+    assert result["Sales"].tolist() == [100.0, 300.0]
+    assert result["Discount"].tolist() == [1, 0]
+
+    assert result["StoreTypeCode"].tolist() == [1, 2]
+    assert result["AssortmentCode"].tolist() == [1, 3]
+    assert result["CompetitionDistance"].tolist() == [1000.0, 2000.0]
+    assert result["Promo2"].tolist() == [0, 1]
+
+    assert pd.api.types.is_datetime64_any_dtype(result["Date"])
+    assert result["Year"].tolist() == [2015, 2015]
+    assert result["Month"].tolist() == [1, 1]
+    assert result["StateHoliday"].tolist() == [0, 0]
