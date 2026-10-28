@@ -50,3 +50,20 @@ def test_knapsack_respects_budget_and_ignores_negative_values():
     assert result["n_targeted"] == int(
         np.sum(result["selected_flags"])
     )
+def test_knapsack_calculates_incremental_value_cost_and_roi():
+    ite = np.array([10.0, 2.0])
+    prices = np.array([20.0, 10.0])
+    budget = 2.0
+
+    result = solve_knapsack_discount_allocation(
+        ite_estimates=ite,
+        item_prices=prices,
+        budget=budget,
+        discount_rate=0.10,
+        method="milp",
+    )
+
+    assert result["n_targeted"] == 1
+    assert result["total_cost"] == pytest.approx(2.0)
+    assert result["total_incremental_value"] == pytest.approx(20.0)
+    assert result["estimated_roi"] == pytest.approx(10.0)
