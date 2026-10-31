@@ -163,7 +163,7 @@ st.markdown("""
 <div class="hero-container">
     <div class="hero-badge">Enterprise Promotion Intelligence</div>
     <h1 class="hero-title">EconoCausal: Causal Inference & Budget Allocation</h1>
-    <p class="hero-subtitle">Double Machine Learning (DML) identifies customers who purchase strictly due to promotional incentives; 0-1 Knapsack Optimization allocates marketing capital to maximize incremental net return.</p>
+    <p class="hero-subtitle">Double Machine Learning (DML) estimates heterogeneous promotional effects; 0-1 Knapsack Optimization allocates the available promotional budget using estimated incremental value.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -312,18 +312,18 @@ with kpi_col1:
 with kpi_col2:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-label">Incremental Revenue</div>
+        <div class="kpi-label">Estimated Incremental Value</div>
         <div class="kpi-value val-green">+{curr_sym}{total_incremental:,.0f}</div>
-        <div class="kpi-subtext val-green">Causal revenue directly attributable to AI</div>
+        <div class="kpi-subtext val-green">Model-estimated value under the selected allocation policy</div>
     </div>
     """, unsafe_allow_html=True)
 
 with kpi_col3:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-label">Campaign ROI</div>
+        <div class="kpi-label">Estimated Campaign ROI</div>
         <div class="kpi-value val-purple">{roi_val:.1f}x</div>
-        <div class="kpi-subtext val-purple">Return per allocated {curr_code}</div>
+        <div class="kpi-subtext val-purple">Estimated value per unit of promotional spend</div>
     </div>
     """, unsafe_allow_html=True)
 
