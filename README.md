@@ -77,15 +77,19 @@ In promotional marketing, all shoppers fall into one of four distinct groups:
 
 ### Step 1: Isolate Genuine Lift with Double Machine Learning (DML)
 Standard regression gets tricked by external factors (called confounders) like holiday paydays or store footfall. We implement **Partially Linear Double Machine Learning (Chernozhukov et al. 2018)**:
-1. Predict what sales would be without a promotion: $E[Y|X]$.
-2. Predict the probability of a promotion being run: $E[D|X]$.
-3. Subtract both predictions out using out-of-fold cross-fitting:
-   $$\tilde{Y} = Y - \hat{g}(X), \quad \tilde{D} = D - \hat{m}(X)$$
-4. Regress clean residualized sales on clean residualized promotions. All outside noise is cancelled out, isolating the pure **Individual Treatment Effect (ITE)**.
+
+1. **Predict Expected Baseline Sales:** Model sales without a promotion: $\mathbb{E}[Y \mid X]$.
+2. **Predict Treatment Propensity:** Model the probability of a promotion being run: $\mathbb{E}[D \mid X]$.
+3. **Orthogonal Residualization (Cross-Fitting):** Subtract both predictions out to eliminate confounding bias: $\tilde{Y} = Y - \hat{g}(X)$ and $\tilde{D} = D - \hat{m}(X)$.
+4. **Isolate True Causal Lift:** Regress clean residualized sales on clean residualized promotions ($\tilde{Y} = \tau \tilde{D} + \varepsilon$). All outside noise is cancelled out, isolating the pure **Individual Treatment Effect (ITE)**.
 
 ### Step 2: Optimal Capital Allocation (0-1 Knapsack MILP)
 Once we know each customer's predicted incremental lift, we solve an exact 0-1 Knapsack problem using Mixed-Integer Linear Programming (SciPy HiGHS solver):
-$$\max \sum_{i=1}^N \text{ITE}_i \cdot t_i \quad \text{subject to} \quad \sum_{i=1}^N (\text{Price}_i \cdot \text{DiscountRate}) \cdot t_i \le \text{Budget}, \quad t_i \in \{0, 1\}$$
+
+$$
+\max \sum_{i=1}^N \text{ITE}_i \cdot t_i \quad \text{subject to} \quad \sum_{i=1}^N (\text{Price}_i \cdot \text{DiscountRate}) \cdot t_i \le \text{Budget}, \quad t_i \in \{0, 1\}
+$$
+
 This guarantees that we select the most profitable combination of customers without exceeding the marketing budget limit by even a single rupee.
 
 ### Step 3: Actionable Operational Schedule
@@ -123,7 +127,7 @@ The top banner shows the metrics leadership cares about: budget adherence, net c
 
 ### 3. Universal Multi-Currency Engine
 Built-in live currency conversion engine (`src/utils/currency.py`) supporting 9 major international currencies:
-- **INR (₹)**, **USD ($)**, **EUR (€)**, **GBP (£)**, **AED (د.إ)**, **CAD (CA$)**, **AUD (A$)**, **JPY (¥)**, **SGD (S$)**
+- **INR (₹)**, **USD (\$)**, **EUR (€)**, **GBP (£)**, **AED (د.إ)**, **CAD (CA\$)**, **AUD (A\$)**, **JPY (¥)**, **SGD (S\$)**
 - Store managers can choose any data input currency and display currency. All KPIs, charts, and downloadable schedules scale dynamically in real time.
 
 ---
@@ -179,7 +183,7 @@ We are a team of 4 dedicated engineers. Here is the official log of what each pe
   - Validated causal recovery on synthetic ground-truth data (recovered true effect within 2.3% error).
 - **Week 2:**
   - Built statistical refutation tests in `src/models/robustness.py`: Placebo Treatment Permutation Tests and Covariate Balance checks (Standardized Mean Differences).
-  - Proved placebo treatment effect collapsed to $0.099 ($p = 0.887$, zero spurious correlation).
+  - Proved placebo treatment effect collapsed to 0.099 ($p = 0.887$, zero spurious correlation).
   - Verified cross-fitting stability across K=2, 3, 5 folds (<0.8% variance).
   - Authored modeling notebook `02_causal_dml_modeling.ipynb`.
 
