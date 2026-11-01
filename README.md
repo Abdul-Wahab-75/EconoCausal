@@ -37,7 +37,7 @@ Below is our production dark-theme executive command center, providing real-time
 
 ## What Is This Project About?
 
-**EconoCausal** is an enterprise decision intelligence system. Instead of giving discounts to everyone, it finds the exact customers who will **only buy if they receive a promotional incentive**, and then uses mathematical optimization to allocate a limited marketing budget to maximize incremental profit.
+**EconoCausal** is an enterprise decision intelligence system. Instead of giving discounts to everyone, it finds the exact customers who will **only buy if they receive a promotional incentive**, and then uses mathematical optimization to allocate a limited marketing budget to maximize incremental profit. It delivers actionable uplift-driven targeting to prevent revenue loss from margin cannibalization.
 
 ---
 
