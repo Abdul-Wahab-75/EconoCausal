@@ -93,7 +93,7 @@ $$
 This guarantees that we select the most profitable combination of customers without exceeding the marketing budget limit by even a single rupee.
 
 ### Step 3: Actionable Operational Schedule
-The system generates a deployment-ready list of targeted candidates that can be downloaded as a CSV and uploaded directly into CRM tools like Salesforce, HubSpot, or Braze.
+The system generates a deployment-ready list of targeted candidates that can be downloaded as a CSV and uploaded directly into CRM tools like Salesforce, HubSpot, or Braze. Each export file includes customer IDs, assigned discount rates, and predicted incremental revenue.
 
 ---
 
