@@ -180,7 +180,7 @@ currency_choice = st.sidebar.radio(
 )
 
 if "Rupees" in currency_choice:
-    curr_sym = "₹"
+    curr_sym = "â‚¹"
     curr_code = "INR"
 else:
     curr_sym = "$"
@@ -330,9 +330,9 @@ with kpi_col3:
 with kpi_col4:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-label">Inefficient Spend Avoided</div>
+        <div class="kpi-label">Records Not Selected</div>
         <div class="kpi-value val-amber">{skipped_count:,} Excluded</div>
-        <div class="kpi-subtext val-amber">Margin preserved from organic buyers</div>
+        <div class="kpi-subtext val-amber">Records excluded by the current budget-constrained allocation policy.</div>
     </div>
     """, unsafe_allow_html=True)
 
