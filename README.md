@@ -115,7 +115,7 @@ Confounding Bias Removed              : +₹1,577.70 (69.5% was non-causal organ
 ## Interactive Dashboard Walkthrough & Visual Proof
 
 ### 1. Executive KPI Cards
-The top banner shows the metrics leadership cares about: budget adherence, net causal revenue, return on investment, and organic margin protected.
+The top banner shows the metrics leadership cares about: budget adherence, net causal revenue, return on investment, and organic margin protected. These live counters update instantly as users modify the budget constraint or toggle display units.
 
 ![Dashboard KPIs](docs/images/dashboard_kpis.png)
 
