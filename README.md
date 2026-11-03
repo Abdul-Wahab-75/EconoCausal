@@ -321,3 +321,144 @@ By the end of this project, we will demonstrate:
 ---
 
 > **Repository:** [github.com/Abdul-Wahab-75/EconoCausal](https://github.com/Abdul-Wahab-75/EconoCausal)
+
+## REST API and Data Drift Detection
+
+EconoCausal provides a REST API for interacting with the Double Machine Learning (DML) causal inference engine. It also includes a data drift detection module to compare reference and current numerical feature distributions.
+
+### 1. Install API Dependencies
+
+Activate the project's virtual environment and install the dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Start the REST API
+
+From the project root directory, run:
+
+```bash
+python -m uvicorn src.api.main:app --reload
+```
+
+The API will be available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+### 3. Interactive API Documentation
+
+Open the following URL in your browser to explore and test the API endpoints using Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### 4. Available API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Checks API health and model status |
+| POST | `/fit` | Fits the DML causal inference model |
+| POST | `/predict` | Predicts Individual Treatment Effects (ITE) |
+| GET | `/model-info` | Returns information about the fitted model |
+| POST | `/drift` | Checks data drift between reference and current data |
+
+### 5. Fit the Causal Inference Model
+
+Send a POST request to `/fit` with feature names, feature values, binary treatment values, and outcome values.
+
+Example request:
+
+```json
+{
+  "feature_names": ["Age", "PriorSpend"],
+  "features": [
+    [25, 100],
+    [30, 150],
+    [35, 200],
+    [40, 250],
+    [45, 300],
+    [50, 350],
+    [28, 120],
+    [38, 220]
+  ],
+  "treatment": [0, 1, 0, 1, 0, 1, 1, 0],
+  "outcome": [120, 180, 140, 230, 160, 270, 200, 190],
+  "n_splits": 2,
+  "nuisance_type": "random_forest",
+  "random_state": 42
+}
+```
+
+The response includes the estimated Average Treatment Effect (ATE), standard error, observation count, and feature names.
+
+### 6. Predict Individual Treatment Effects
+
+After successfully fitting the model, send a POST request to `/predict`.
+
+Example request:
+
+```json
+{
+  "feature_names": ["Age", "PriorSpend"],
+  "features": [
+    [32, 180],
+    [42, 280]
+  ]
+}
+```
+
+The response contains the predicted ITE values for the supplied observations.
+
+**Note:** Feature names and their order must match the training request. The model must be fitted before making predictions.
+
+### 7. Data Drift Detection
+
+The `/drift` endpoint compares numerical features in reference and current datasets using:
+
+- **Population Stability Index (PSI):** Measures changes in feature distributions.
+- **Kolmogorov-Smirnov (KS) Test:** Tests for statistical differences between distributions.
+
+Example request:
+
+```json
+{
+  "reference": [
+    {"Age": 25, "PriorSpend": 100},
+    {"Age": 30, "PriorSpend": 150},
+    {"Age": 35, "PriorSpend": 200},
+    {"Age": 40, "PriorSpend": 250}
+  ],
+  "current": [
+    {"Age": 45, "PriorSpend": 400},
+    {"Age": 50, "PriorSpend": 450},
+    {"Age": 55, "PriorSpend": 500},
+    {"Age": 60, "PriorSpend": 550}
+  ],
+  "psi_threshold": 0.20,
+  "significance_level": 0.05
+}
+```
+
+The response reports the features checked, PSI values, KS statistics, p-values, and whether drift was detected.
+
+A feature is flagged when its PSI reaches the configured threshold or its KS test p-value falls below the configured significance level.
+
+### 8. Model State and Limitations
+
+The API currently keeps the fitted model in memory within the running application process. Restarting the API clears this model state, so the model must be fitted again before requesting predictions.
+
+Data drift results indicate distribution changes; they do not independently establish model performance degradation or prove a causal effect.
+
+### 9. Run API and Drift Tests
+
+Run the targeted API and data drift tests:
+
+```bash
+python -m pytest tests/test_api.py tests/test_drift.py -v
+```
+
+These tests cover API health, model fitting, ITE prediction, model information, drift detection, and validation behaviour.

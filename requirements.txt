@@ -34,3 +34,4 @@ pyyaml>=6.0.0
 
 # REST API for causal inference engine
 fastapi>=0.110
+uvicorn>=0.23
