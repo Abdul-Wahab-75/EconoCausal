@@ -31,3 +31,6 @@ notebook>=7.0.0
 pytest>=7.4.0
 python-dotenv>=1.0.0
 pyyaml>=6.0.0
+
+# REST API for causal inference engine
+fastapi>=0.110
