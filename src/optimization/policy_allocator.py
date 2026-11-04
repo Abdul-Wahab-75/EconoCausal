@@ -7,7 +7,8 @@ def compare_allocation_policies(
     df: pd.DataFrame,
     ite_estimates: np.ndarray,
     budget: float,
-    discount_rate: float = 0.15
+    discount_rate: float = 0.15,
+    ite_is_revenue: bool = False,
 ) -> pd.DataFrame:
     """
     Compares 3 different marketing allocation strategies under identical budget:
@@ -23,7 +24,8 @@ def compare_allocation_policies(
         item_prices=prices,
         budget=budget,
         discount_rate=discount_rate,
-        method="milp"
+        method="milp",
+        ite_is_revenue=ite_is_revenue,
     )
     
     costs = causal_res["customer_costs"]

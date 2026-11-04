@@ -11,7 +11,8 @@ def solve_knapsack_discount_allocation(
     item_prices: np.ndarray,
     budget: float,
     discount_rate: float = 0.15,
-    method: str = "milp"
+    method: str = "milp",
+    ite_is_revenue: bool = False,
 ) -> Dict[str, Any]:
     """
     Solves 0-1 Knapsack problem for budget-constrained discount allocation.
@@ -26,7 +27,10 @@ def solve_knapsack_discount_allocation(
         c_i = cost of discount = price_i * discount_rate
     """
     n_customers = len(ite_estimates)
-    v = np.maximum(ite_estimates * item_prices * 0.10, 0.0)  # Value / incremental gross profit
+    if ite_is_revenue:
+        v = np.maximum(ite_estimates * 0.10, 0.0)  # Revenue ITE converted to gross profit
+    else:
+        v = np.maximum(ite_estimates * item_prices * 0.10, 0.0)  # Synthetic price-adjusted value
     c = np.maximum(item_prices * discount_rate, 0.50)        # Cost per customer discount
     
     logger.info(f"Setting up Knapsack for {n_customers} candidates with budget ${budget:,.2f}...")

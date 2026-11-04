@@ -19,6 +19,7 @@ from src.models.dml_estimator import DoubleMLEstimator
 from src.optimization.knapsack import solve_knapsack_discount_allocation
 from src.optimization.policy_allocator import compare_allocation_policies
 from src.evaluation.metrics import compute_uplift_curve, compute_qini_score
+from src.dashboard.strategy_summary import create_strategy_summary
 
 # Page Configuration - Clean corporate title, no emoji
 st.set_page_config(
@@ -180,7 +181,7 @@ currency_choice = st.sidebar.radio(
 )
 
 if "Rupees" in currency_choice:
-    curr_sym = "â‚¹"
+    curr_sym = "\u20B9"
     curr_code = "INR"
 else:
     curr_sym = "$"
@@ -264,10 +265,11 @@ def execute_causal_engine(dataset_choice: str, n_records: int, model_type: str, 
             item_prices=df["EstimatedItemPrice"].values,
             budget=budget_val,
             discount_rate=disc_rate,
-            method="milp"
+            method="milp",
+            ite_is_revenue=True,
         )
         df["Decision"] = np.where(knapsack_res["selected_flags"] == 1, "TARGET", "SKIP")
-        policy_df = compare_allocation_policies(df, df["Estimated_ITE"].values, budget=budget_val, discount_rate=disc_rate)
+        policy_df = compare_allocation_policies(df, df["Estimated_ITE"].values, budget=budget_val, discount_rate=disc_rate, ite_is_revenue=True)
         
         median_sales = df["Sales"].median()
         median_ite = df["Estimated_ITE"].median()
@@ -299,13 +301,19 @@ roi_val = knapsack_out["estimated_roi"]
 targeted_count = knapsack_out["n_targeted"]
 total_count = len(data_df)
 skipped_count = total_count - targeted_count
+strategy_summary = create_strategy_summary(
+    knapsack_result=knapsack_out,
+    policy_comparison=policy_comp_df,
+    dataset_name=dataset_type,
+    currency_symbol=curr_sym,
+)
 
 with kpi_col1:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-label">Allocated Capital</div>
         <div class="kpi-value val-blue">{curr_sym}{budget_spent:,.0f}</div>
-        <div class="kpi-subtext sub-muted">Limit: {curr_sym}{budget:,.0f} (100% adherence)</div>
+        <div class="kpi-subtext sub-muted">Limit: {curr_sym}{budget:,.0f} ({strategy_summary["budget_utilization_pct"]:.1f}% utilized)</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -339,7 +347,17 @@ with kpi_col4:
 st.write("")
 
 # -------------------------------------------------------------
-# 2. SIDE-BY-SIDE VISUAL PROOF (CONFOUNDING & STRATEGY TOURNAMENT)
+# 2. NATURAL LANGUAGE STRATEGY SUMMARY
+# -------------------------------------------------------------
+st.markdown("### Natural Language Strategy Summary")
+st.write(strategy_summary["overview"])
+st.write(strategy_summary["comparison_text"])
+st.write(strategy_summary["recommendation"])
+st.caption(strategy_summary["caveat"])
+st.write("")
+
+# -------------------------------------------------------------
+# 3. SIDE-BY-SIDE VISUAL PROOF (CONFOUNDING & STRATEGY TOURNAMENT)
 # -------------------------------------------------------------
 row2_col1, row2_col2 = st.columns([1, 1])
 
@@ -418,12 +436,9 @@ with row2_col2:
     )
     st.plotly_chart(fig_tourney, use_container_width=True)
     
-    causal_gain = policy_comp_df.iloc[0]["Incremental_Gain"]
-    heuristic_gain = max(policy_comp_df.iloc[1]["Incremental_Gain"], 1.0)
-    multiple = causal_gain / heuristic_gain
     st.markdown(f"""
     <div class="insight-pill">
-        <b>Efficiency Gain:</b> EconoCausal yields <b>{multiple:.1f}x higher incremental revenue</b> relative to standard top-spender allocation.
+        <b>Policy Comparison:</b> {strategy_summary["comparison_text"]}
     </div>
     </div>
     """, unsafe_allow_html=True)
@@ -465,7 +480,7 @@ with row3_col2:
     st.markdown("""
     <div class="chart-box">
         <div class="chart-title">Qini Uplift Curve (Cumulative Gain)</div>
-        <div class="chart-desc">Higher curve trajectory demonstrates faster incremental revenue capture per candidate.</div>
+        <div class="chart-desc">Evaluates model ranking using cumulative treated and control outcomes; this is a Qini evaluation curve, not the optimizer revenue estimate.</div>
     """, unsafe_allow_html=True)
     
     curve_data = compute_uplift_curve(
@@ -499,7 +514,7 @@ with row3_col2:
         margin=dict(l=20, r=20, t=10, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         xaxis=dict(gridcolor="#1E293B", title="% of Candidates Targeted"),
-        yaxis=dict(gridcolor="#1E293B", title=f"Cumulative Incremental Lift ({curr_sym})")
+        yaxis=dict(gridcolor="#1E293B", title="Cumulative Qini (Sales units)")
     )
     st.plotly_chart(fig_qini, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
