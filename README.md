@@ -23,6 +23,7 @@ Below is our production dark-theme executive command center, providing real-time
 1. [What Is This Project About?](#what-is-this-project-about)
 2. [The Real-World Business Problem (The Discount Trap)](#the-real-world-business-problem-the-discount-trap)
 3. [The 4 Customer Types (Why Traditional AI Fails)](#the-4-customer-types-why-traditional-ai-fails)
+   - [Why No Standard Accuracy or Confusion Matrix?](#why-no-standard-accuracy-or-confusion-matrix-the-causal-alternative)
 4. [How Does It Work? (The 3-Step Solution)](#how-does-it-work-the-3-step-solution)
 5. [The Discovery: Uncovering the 69.5% Confounding Trap](#the-discovery-uncovering-the-695-confounding-trap)
 6. [Interactive Dashboard Walkthrough & Visual Proof](#interactive-dashboard-walkthrough--visual-proof)
@@ -65,6 +66,19 @@ In promotional marketing, all shoppers fall into one of four distinct groups:
 | **Sleeping Dogs** | Browse quietly | Get annoyed & unsubscribe | **[DO NOT TOUCH]** | Annoyed by spam; discounts cause churn |
 
 > **Why standard machine learning fails:** Standard models only predict *"Who is likely to buy?"* Naturally, the AI points to the **Sure Things** because their purchase probability is already high. EconoCausal asks the right question: *"Who will buy ONLY because of the discount?"*
+
+### Why No Standard Accuracy or Confusion Matrix? (The Causal Alternative)
+
+Mentors and evaluators often ask: *"Where is the model accuracy score or classification confusion matrix?"*
+
+In observational customer data, standard accuracy ($\frac{\text{TP} + \text{TN}}{\text{Total}}$) cannot mathematically exist due to the **Fundamental Problem of Causal Inference**: for any individual shopper, you only ever observe one counterfactual universe ($Y_i(1)$ with discount or $Y_i(0)$ without discount). Because counterfactual states cannot be measured simultaneously in the real world, factual ground-truth labels for Individual Treatment Effects ($\text{ITE}_i$) do not exist.
+
+Instead, EconoCausal replaces traditional classification metrics with a **4-pillar causal validation framework**:
+
+1. **The 4-Quadrant Uplift Matrix:** Serves as the causal equivalent of a confusion matrix. Traditional classifiers misidentify **Sure Things** as True Positives (driving the 69.5% Confounding Trap), whereas our model isolates genuine **Persuadables**.
+2. **Synthetic Ground-Truth Recovery (97.7% Causal Accuracy):** On benchmarks with known treatment effects (\$31.83 in `src/data/synthetic.py`), our DML estimator recovered the true effect at **\$31.09** (**only 2.3% error** vs. 84.5% error from naive OLS, with correlation $r > 0.95$).
+3. **Normalized Qini Score & AUUC (Uplift AUC):** Evaluated in `notebooks/04_evaluation_and_insights.ipynb`, measuring cumulative incremental revenue captured when sorting candidates by predicted ITE against a random targeting baseline.
+4. **Placebo Statistical Refutation ($p = 0.887$):** Permuting discount labels across 5 iterations in `src/models/robustness.py` collapsed estimated lift to $0.099$, proving the model captures genuine causal relationships rather than fitting spurious correlations.
 
 ---
 
@@ -379,5 +393,6 @@ Open your browser at `http://localhost:8501` to interactively adjust budgets, ch
 ---
 
 > **Project Repository:** [github.com/Abdul-Wahab-75/EconoCausal](https://github.com/Abdul-Wahab-75/EconoCausal)  
+> **Lead Branch:** [tree/Meet](https://github.com/Abdul-Wahab-75/EconoCausal/tree/Meet)  
 > **Developed by:** Meet Nakum (Lead), Md Abdul Wahab, Prince Yadav, and Shravani Balraj Umbarje  
 > **Internship:** Infotact Solutions (Ref: `ITS/DSML/1233`)
