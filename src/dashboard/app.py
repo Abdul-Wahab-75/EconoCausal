@@ -16,6 +16,7 @@ from src.data.synthetic import generate_synthetic_data
 from src.data.load_data import load_rossmann
 from src.data.features import engineer_features, get_rossmann_feature_cols
 from src.models.dml_estimator import DoubleMLEstimator
+from src.models.propensity_matching import propensity_score_matching
 from src.optimization.knapsack import solve_knapsack_discount_allocation
 from src.optimization.policy_allocator import compare_allocation_policies
 from src.evaluation.metrics import compute_uplift_curve, compute_qini_score
@@ -307,6 +308,18 @@ strategy_summary = create_strategy_summary(
     dataset_name=dataset_type,
     currency_symbol=curr_sym,
 )
+# -------------------------------------------------------------
+# PROPENSITY SCORE MATCHING ANALYSIS
+# -------------------------------------------------------------
+try:
+    psm_result = propensity_score_matching(
+        X=data_df[active_feats],
+        treatment=data_df["Discount"]
+    )
+    psm_error = None
+except (ValueError, TypeError) as exc:
+    psm_result = None
+    psm_error = str(exc)
 
 with kpi_col1:
     st.markdown(f"""
@@ -354,6 +367,54 @@ st.write(strategy_summary["overview"])
 st.write(strategy_summary["comparison_text"])
 st.write(strategy_summary["recommendation"])
 st.caption(strategy_summary["caveat"])
+st.write("")
+# -------------------------------------------------------------
+# PROPENSITY SCORE MATCHING DASHBOARD
+# -------------------------------------------------------------
+st.markdown("### Propensity Score Matching Analysis")
+
+if psm_result is not None:
+    psm_col1, psm_col2, psm_col3 = st.columns(3)
+
+    psm_col1.metric(
+        "Treated Matched",
+        f'{psm_result["n_treated_matched"]:,}'
+    )
+    psm_col2.metric(
+        "Control Matched",
+        f'{psm_result["n_control_matched"]:,}'
+    )
+    psm_col3.metric(
+        "Matched Pairs",
+        f'{len(psm_result["matched_pairs"]):,}'
+    )
+
+    balance_before = psm_result["balance_before"][
+        ["Feature", "SMD"]
+    ].rename(columns={"SMD": "Before Matching"})
+
+    balance_after = psm_result["balance_after"][
+        ["Feature", "SMD"]
+    ].rename(columns={"SMD": "After Matching"})
+
+    balance_comparison = balance_before.merge(
+        balance_after,
+        on="Feature"
+    )
+
+    st.dataframe(
+        balance_comparison,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.caption(
+        "SMD below 0.1 indicates acceptable measured covariate balance "
+        "under the project's matching threshold."
+    )
+else:
+    st.warning(f"PSM analysis could not run: {psm_error}")
+
 st.write("")
 
 # -------------------------------------------------------------

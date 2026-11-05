@@ -87,3 +87,35 @@ def test_covariate_balance_calculates_smd_correctly():
     assert result.iloc[0]["Feature"] == "FeatureA"
     assert result.iloc[0]["SMD"] == round(expected_smd, 4)
     assert bool(result.iloc[0]["Balanced"]) == (expected_smd < 0.10)
+
+def test_predict_treatment_uses_probability_of_class_one():
+    from src.models.dml_estimator import _predict_treatment
+
+    class FakeClassifier:
+        classes_ = np.array([1, 0])
+
+        def predict_proba(self, X):
+            return np.array([
+                [0.8, 0.2],
+                [0.3, 0.7],
+            ])
+
+        def predict(self, X):
+            raise AssertionError("Classifier probabilities should be used.")
+
+    predictions = _predict_treatment(FakeClassifier(), np.zeros((2, 1)))
+
+    np.testing.assert_allclose(predictions, [0.8, 0.3])
+
+
+def test_predict_treatment_supports_regression_models():
+    from src.models.dml_estimator import _predict_treatment
+
+    class FakeRegressor:
+        def predict(self, X):
+            return np.array([0.25, 0.75])
+
+    predictions = _predict_treatment(FakeRegressor(), np.zeros((2, 1)))
+
+    np.testing.assert_allclose(predictions, [0.25, 0.75])
+

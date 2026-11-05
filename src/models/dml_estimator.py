@@ -12,6 +12,23 @@ from .nuisance import get_nuisance_models
 
 logger = get_logger("DoubleMLEstimator")
 
+def _predict_treatment(model, X):
+    """Predict E[D|X], using class-1 probability for classifiers."""
+    if hasattr(model, "predict_proba"):
+        probabilities = np.asarray(model.predict_proba(X))
+        classes = np.asarray(model.classes_)
+        treatment_indices = np.flatnonzero(classes == 1)
+
+        if len(treatment_indices) != 1:
+            raise ValueError(
+                "Treatment model must contain exactly one class labelled 1."
+            )
+
+        return probabilities[:, treatment_indices[0]]
+
+    return np.asarray(model.predict(X)).reshape(-1)
+
+
 
 class DoubleMLEstimator:
     """
@@ -148,7 +165,7 @@ class DoubleMLEstimator:
             m_t.fit(X_tr, D_tr)
 
             y_res[val_idx] = Y_val - m_y.predict(X_val)
-            d_res[val_idx] = D_val - m_t.predict(X_val)
+            d_res[val_idx] = D_val - _predict_treatment(m_t, X_val)
 
         # Second stage: regress Y residuals on D residuals.
         sec_stage = LinearRegression(fit_intercept=False)
