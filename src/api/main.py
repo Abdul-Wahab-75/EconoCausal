@@ -1,8 +1,9 @@
-from typing import Dict, List, Optional
+﻿from typing import Dict, List, Optional
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.models.dml_estimator import DoubleMLEstimator
 from src.evaluation.drift import detect_data_drift
@@ -12,6 +13,13 @@ app = FastAPI(
     title="EconoCausal REST API",
     description="REST API for the Double Machine Learning causal inference engine.",
     version="1.0.0",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # In-memory model state for the running API process.
@@ -98,7 +106,7 @@ def fit_model(request: FitRequest):
         new_estimator = DoubleMLEstimator(
             n_splits=request.n_splits,
             nuisance_type=request.nuisance_type,
-            backend="native",
+            backend="econml",
             random_state=request.random_state,
         )
         new_estimator.fit(X, D, Y)
@@ -172,7 +180,11 @@ def model_info():
 
     return {
         "fitted": True,
-        "backend": "native",
+        "backend": (
+    "econml"
+    if estimator._econml_model is not None
+    else "native"
+),
         "observations": training_observations,
         "feature_names": trained_feature_names,
         "ate": float(estimator.ate_),
@@ -209,3 +221,4 @@ def check_data_drift(request: DriftRequest):
             status_code=400,
             detail=f"Data drift detection failed: {str(exc)}",
         ) from exc
+
