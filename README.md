@@ -1,464 +1,325 @@
 # EconoCausal
+## Dynamic Pricing via Double Machine Learning
 
-### Smart Discount Targeting using Causal AI & Budget Optimization
+**Domain:** Economics & Causal AI  
+**Project:** Project 2 — Infotact Solutions Advanced Data Science & ML Engineering
 
----
+## 1. Project Overview
 
-## What Is This Project About?
+EconoCausal is a causal machine learning and budget optimization project designed to support smarter discount allocation.
 
-Every business gives discounts to increase sales — but **most companies waste money** by giving discounts to the wrong people:
+Traditional predictive models identify customers who may purchase or churn, but they do not necessarily estimate whether a discount causes a change in customer behaviour.
 
-| Customer Type | What Happens | Result |
-|---|---|---|
-| **Persuadables** | They **only buy when they get a discount** | [TARGET] Money well spent |
-| **Sure Things** | They would have bought **even without a discount** | [SKIP] Wasted profit |
-| **Lost Causes** | They **won't buy no matter what** | [SKIP] Wasted budget |
-| **Sleeping Dogs** | Discounts actually **annoy them and push them away** | [SKIP] Negative effect |
+EconoCausal uses Double Machine Learning (DML) to estimate treatment effects and a budget-constrained optimization approach to select customers for discount targeting.
 
-> **Our Goal:** Build a smart system that figures out **which customers are "Persuadables"** and only gives discounts to them — all within a fixed marketing budget.
+**Main objective:** Estimate the potential incremental effect of discounts and allocate a limited marketing budget using model-based customer values.
 
----
+## 2. Problem Statement
 
-## How Does It Work? (Simple Explanation)
+Businesses can waste marketing budgets by offering discounts to customers who would have purchased without an incentive.
 
-We use a 3-step pipeline:
+The project aims to distinguish customers based on their estimated response to a discount and compare causal targeting with alternative allocation strategies.
 
-### Step 1: Find the Real Effect of Discounts (Causal AI)
+The assignment describes the following customer categories:
 
-Regular AI just looks at patterns like *"people who got discounts bought more."* But that's misleading — maybe those people would have bought anyway!
+- **Persuadables:** Customers who respond positively to discounts.
+- **Sure Things:** Customers who may purchase without a discount.
+- **Lost Causes:** Customers who are unlikely to purchase even with a discount.
+- **Sleeping Dogs:** Customers whose response to a discount may be negative.
 
-We use a technique called **Double Machine Learning (DML)** which removes this bias:
+These categories describe the business concept. They should not be interpreted as individually verified customer labels unless the implementation explicitly calculates them.
 
-1. **First**, train an ML model to predict: *"How much would this customer buy WITHOUT a discount?"*
-2. **Then**, train another ML model to predict: *"How likely is it that this customer was given a discount?"*
-3. **Finally**, subtract out both predictions — what's left is the **true causal effect** of the discount on each customer.
+## 3. Project Workflow
 
-This gives us a score called **ITE (Individual Treatment Effect)** — basically:
-> *"If we give this specific customer a discount, how much EXTRA will they spend because of it?"*
+The implemented project follows this general workflow:
 
-### Step 2: Decide Who Gets the Discount (Budget Optimization)
+1. Load and prepare the dataset.
+2. Generate treatment-effect estimates using the DML modelling pipeline.
+3. Evaluate uplift and causal targeting performance.
+4. Allocate a fixed budget using a 0-1 Knapsack optimization approach.
+5. Compare Causal DML, High-Spender and Random targeting policies.
+6. Display results through an interactive dashboard.
+7. Expose selected model operations through a REST API.
+8. Detect numerical feature distribution changes using data drift checks.
+9. Generate natural-language summaries of allocation strategies.
 
-We have a limited marketing budget (say $5,000). We can't discount everyone. So we solve a mathematical puzzle called the **Knapsack Problem**:
+## 4. Assignment Development Plan
 
-- Each customer has a **value** (their ITE — how much extra they'd spend)
-- Each customer has a **cost** (the discount amount we'd give them)
-- We pick the best combination of customers that **maximizes total extra sales** without going over budget
+The following four-week plan is taken from the EconoCausal assignment in the Infotact project document.
 
-Think of it like packing a suitcase — you want to fit the most valuable items without exceeding the weight limit.
+### Week 1 — Causal Graphing and Dashboard Foundation
 
-### Step 3: Measure & Compare (Evaluation)
+**Causal ML and Optimization**
+- Define a causal Directed Acyclic Graph (DAG).
+- Identify confounders, treatment and outcome variables.
+- Prepare a mock retail dataset.
 
-We compare our smart approach against two baselines:
-- **Random Targeting** — give discounts to random people
-- **High-Spender Heuristic** — traditional marketing approach: discount the biggest spenders
+**Visualization and UI**
+- Create the dashboard foundation.
+- Provide a way to load historical campaign data.
+- Provide budget input and configuration.
 
-We measure success using:
-- **Qini Curve** — shows how much extra revenue we capture as we target more customers
-- **ROI** — how many dollars of extra sales we get for every dollar spent on discounts
+### Week 2 — Double Machine Learning and Uplift Evaluation
 
----
+**Causal ML and Optimization**
+- Train Double Machine Learning models.
+- Estimate Individual Treatment Effects (ITE).
+- Perform causal validation and audit.
 
-## Technical Details (For Those Who Want the Math)
+**Visualization and UI**
+- Display Qini and uplift evaluation charts.
+- Support filtering and visualization of customer treatment-effect estimates.
 
-<details>
-<summary>Click to expand the mathematical framework</summary>
+### Week 3 — Prescriptive Optimization
 
-### Causal Model (Partially Linear Regression)
+**Causal ML and Optimization**
+- Implement budget-constrained optimization using SciPy.
+- Allocate discounts using estimated treatment effects.
+- Compare allocation strategies.
 
-```
-Y = g(X) + θ(X) · D + ε       (Outcome equation)
-D = m(X) + η                    (Treatment equation)
-```
+**Visualization and UI**
+- Display the customer allocation matrix.
+- Show selected customers and their allocation information.
+
+### Week 4 — API, Data Drift and Dashboard Refinement
+
+**Causal ML and Optimization**
+- Expose the causal inference engine through a REST API.
+- Implement an automated data drift detector.
+
+**Visualization and UI**
+- Refine the dashboard.
+- Add natural-language strategy summaries.
+
+**Final Review:** Present the integrated causal and prescriptive analytics solution.
+
+## 5. Implemented Optimization Approach
+
+The project uses a 0-1 Knapsack optimization approach implemented with SciPy.
+
+Three allocation strategies are compared:
+
+1. **Causal DML Optimal:** Selects customers using estimated treatment effects and budget-constrained optimization.
+2. **High-Spender Heuristic:** Prioritizes customers with higher historical `PriorSpend`; if that field is unavailable, estimated prices are used.
+3. **Random Targeting:** Selects customers in a reproducible random order.
+
+All three strategies use the same estimated customer discount costs and budget limit.
+
+### Optimization formulation
+
+Maximize:
+
+`Σ (v_i × t_i)`
+
+Subject to:
+
+`Σ (c_i × t_i) ≤ Budget`
+
+`t_i ∈ {0, 1}`
 
 Where:
-- `Y` = Sales (outcome)
-- `D` = Discount given or not (0 or 1)
-- `X` = Customer features (age, spend history, visit frequency, loyalty score)
-- `g(X)` = Expected sales without discount
-- `m(X)` = Probability of getting a discount
-- `θ(X)` = **The causal effect we want to estimate (ITE)**
 
-### DML Cross-Fitting Procedure
+- `t_i` indicates whether customer `i` is selected.
+- `v_i` is the estimated incremental value.
+- `c_i` is the estimated discount cost.
+- `Budget` is the available marketing budget.
 
-1. Split data into K folds
-2. For each fold, train nuisance models on the OTHER folds to predict `g(X)` and `m(X)`
-3. Compute residuals: `Ỹ = Y - ĝ(X)` and `D̃ = D - m̂(X)`
-4. Regress `Ỹ` on `D̃` to get the unbiased treatment effect `θ̂`
+### Value calculation in the current implementation
 
-### Budget Optimization (0-1 Knapsack)
+For Rossmann revenue ITE:
 
-```
-Maximize:    Σ (ITE_i × price_i) × t_i
-Subject to:  Σ (price_i × discount_rate) × t_i ≤ Budget
-             t_i ∈ {0, 1}
-```
+`v_i = max(ITE_i × 0.10, 0)`
 
-Solved using Mixed-Integer Linear Programming (SciPy MILP / HiGHS solver).
+For the Synthetic Benchmark:
 
-### Key Assumptions
+`v_i = max(ITE_i × item_price_i × 0.10, 0)`
 
-1. **Unconfoundedness** — We observe all the factors that influence both discount assignment and purchasing
-2. **Positivity** — Every customer has some chance of receiving (or not receiving) a discount
-3. **SUTVA** — One customer's discount doesn't affect another customer's buying decision
+Estimated discount cost:
 
-</details>
+`c_i = max(item_price_i × discount_rate, 0.50)`
 
----
+The 10% factor and minimum discount cost of 0.50 are modelling assumptions, not verified actual business margins or discount costs.
 
-## Team Members & Who Works on What
+The optimizer uses SciPy's Mixed-Integer Linear Programming (MILP) solver with a greedy fallback when the MILP solver is unsuccessful.
 
-We are a team of **4 members**. Each person owns a specific part of the code, so we can all work simultaneously without conflicts:
+## 6. Evaluation Metrics
 
-| # | Role | What They Do | Code Ownership | Notebook |
-|---|---|---|---|---|
-| 1 | **Data Engineer** | Loads data, cleans it, creates useful features | `src/data/` | `01_eda_and_preprocessing.ipynb` |
-| 2 | **Causal Modeler** | Builds the DML model, estimates treatment effects, runs validity checks | `src/models/` | `02_causal_dml_modeling.ipynb` |
-| 3 | **Optimization Analyst** | Solves the budget allocation problem, compares targeting strategies | `src/optimization/` | `03_budget_optimization.ipynb` |
-| 4 | **Project Lead & Evaluator** | Measures performance (Qini curves), builds the demo dashboard, writes the report | `src/evaluation/` + `src/dashboard/` | `04_evaluation_and_insights.ipynb` |
+The project uses the following evaluation and allocation metrics:
 
----
+- **Qini Curve:** Evaluates cumulative uplift from treatment-effect-based targeting. It is not the optimizer's revenue estimate.
+- **Estimated Incremental Value:** Sum of estimated values for selected customers.
+- **Estimated ROI:** Estimated incremental value divided by estimated discount cost.
+- **Budget Utilization:** Percentage of the available budget used.
+- **Lift vs Random:** Percentage difference in estimated incremental gain compared with random targeting.
 
-## Project Folder Structure
+All optimizer values are model-based estimates. They do not guarantee realized revenue, profit or business outcomes. A controlled experiment is needed to validate actual business impact.
 
-```
+## 7. Technology Stack
+
+| Area | Technology |
+|---|---|
+| Programming Language | Python |
+| Data Processing | Pandas, NumPy |
+| Machine Learning | Scikit-learn |
+| Causal Modelling | Double Machine Learning implementation |
+| Optimization | SciPy MILP / HiGHS |
+| Evaluation | Qini and uplift metrics |
+| Dashboard | Streamlit |
+| REST API | FastAPI |
+| API Server | Uvicorn |
+| Data Drift | PSI and Kolmogorov-Smirnov test |
+| Testing | Pytest |
+
+**Implementation note:** The assignment describes a React and Plotly experimentation UI. The current repository dashboard is implemented using Streamlit. This is an implementation difference and is documented transparently rather than claiming that a React frontend was built.
+
+## 8. Project Structure
+
+The following are the main implementation paths confirmed in the project:
+
+```text
 EconoCausal/
 │
-├── data/                          # All datasets go here
-│   ├── raw/                       #   └── Original downloaded data
-│   ├── processed/                 #   └── Cleaned & ready-to-use data
-│   └── synthetic/                 #   └── Fake data we generate for testing
+├── src/
+│   ├── api/
+│   │   └── main.py
+│   ├── data/
+│   ├── models/
+│   ├── optimization/
+│   │   ├── knapsack.py
+│   │   └── policy_allocator.py
+│   ├── evaluation/
+│   │   └── drift.py
+│   ├── dashboard/
+│   │   ├── app.py
+│   │   └── strategy_summary.py
+│   └── utils/
 │
-├── notebooks/                     # Jupyter notebooks (one per team member)
-│   ├── 01_eda_and_preprocessing.ipynb
-│   ├── 02_causal_dml_modeling.ipynb
-│   ├── 03_budget_optimization.ipynb
-│   └── 04_evaluation_and_insights.ipynb
+├── tests/
+│   ├── test_api.py
+│   ├── test_drift.py
+│   └── test_strategy_summary.py
 │
-├── src/                           # Main Python code (importable package)
-│   ├── data/                      #   └── Data loading, cleaning, feature creation
-│   │   ├── load_data.py
-│   │   ├── preprocess.py
-│   │   ├── synthetic.py           #       └── Generates fake customer data with known answers
-│   │   └── features.py
-│   ├── models/                    #   └── Causal inference engine
-│   │   ├── nuisance.py            #       └── First-stage ML predictors
-│   │   ├── dml_estimator.py       #       └── Double ML estimator (the core!)
-│   │   └── robustness.py          #       └── Placebo tests & balance checks
-│   ├── optimization/              #   └── Budget allocation solver
-│   │   ├── knapsack.py            #       └── 0-1 Knapsack MILP solver
-│   │   └── policy_allocator.py    #       └── Compare Causal vs Heuristic vs Random
-│   ├── evaluation/                #   └── Metrics & charts
-│   │   ├── metrics.py             #       └── Qini score, uplift curves, AUUC
-│   │   └── visualizations.py      #       └── Publication-quality plots
-│   ├── dashboard/                 #   └── Interactive web demo
-│   │   └── app.py                 #       └── Streamlit dashboard
-│   └── utils/                     #   └── Shared helpers
-│       ├── config.py              #       └── File paths & default settings
-│       └── logger.py              #       └── Logging utility
-│
-├── models/                        # Saved trained models (.pkl files)
-├── reports/                       # Final report, slides, and charts
-│   ├── figures/
+├── reports/
 │   ├── final_report.md
-│   └── presentation_outline.md
-├── tests/                         # Automated tests to verify everything works
+│   └── EconoCausal_Final_Presentation.pptx
 │
-├── .github/                       # GitHub CI pipeline & PR template
-├── requirements.txt               # Python package dependencies
-├── environment.yml                # Conda environment file
-├── setup.py                       # Makes 'src' installable as a package
-└── README.md                      # ← You are here!
+├── requirements.txt
+└── README.md
 ```
 
----
+This is a high-level project structure. Other source files and test files may also be present.
 
-##  Project Roadmap (12 Weeks)
+## 9. Installation and Setup
 
-```
-PHASE 1: FOUNDATIONS (Weeks 1-2)
-├── Study Double ML theory & causal inference basics
-├── Draw the Causal DAG (cause-and-effect diagram)
-└── Set up the Git repo, environment, and CI pipeline
+Clone the repository:
 
-PHASE 2: DATA (Weeks 3-4)
-├── Download real datasets (Rossmann Store Sales / UCI Online Retail)
-├── Build the synthetic data generator (fake data with known answers for testing)
-├── Clean data, handle missing values, create features
-└── Run Exploratory Data Analysis (EDA)
-
-PHASE 3: CAUSAL MODEL (Weeks 5-6)
-├── Train first-stage ML models (predict sales & discount probability)
-├── Implement K-fold cross-fitting
-└── Get initial treatment effect estimates (ATE & ITE)
-
-PHASE 4: VALIDATION (Weeks 7-8)
-├── Run Placebo Test (shuffle treatment → effect should be ~0)
-├── Check Covariate Balance (treated vs control groups should look similar)
-└── Tune hyperparameters for better estimates
-
-PHASE 5: OPTIMIZATION (Weeks 9-10)
-├── Build the Knapsack budget solver
-├── Compare Causal Policy vs High-Spender Heuristic vs Random
-└── Integrate the full pipeline: Data → Model → Optimizer
-
-PHASE 6: DELIVERY (Weeks 11-12)
-├── Generate Qini curves, ROI tables, and publication charts
-├── Build the interactive Streamlit demo dashboard
-├── Write the final report and prepare the presentation (12 slides)
-└── Rehearse and present!
-```
-
----
-
-## How to Get Started
-
-### 1. Clone the Repository
 ```bash
 git clone https://github.com/Abdul-Wahab-75/EconoCausal.git
 cd EconoCausal
 ```
 
-### 2. Set Up Your Environment
-```bash
-# Create a virtual environment
-python -m venv venv
+Create and activate a virtual environment.
 
-# Activate it
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+**Windows PowerShell:**
 
-# Install all dependencies
-pip install -r requirements.txt
-pip install -e .
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-### 3. Run the Tests (Make Sure Everything Works)
+Install dependencies:
+
 ```bash
-pytest tests/ -v
+python -m pip install -r requirements.txt
 ```
 
-### 4. Launch the Demo Dashboard
+If the project package installation is required:
+
+```bash
+python -m pip install -e .
+```
+
+## 10. Run the Dashboard
+
+From the project root:
+
 ```bash
 streamlit run src/dashboard/app.py
 ```
 
-### 5. Open the Notebooks
-```bash
-jupyter lab
-```
+Streamlit will display a local URL in the terminal. Open that URL in a browser.
 
----
+## 11. REST API
 
-## How We Work Together on GitHub
+The project provides a REST API for interacting with the DML inference engine.
 
-### Branch Naming
-Each member creates their own branch to work on:
-```
-member1/data-pipeline
-member2/dml-modeling
-member3/knapsack-optimization
-member4/evaluation-dashboard
-```
-
-### Daily Workflow
-```bash
-# 1. Get the latest code
-git checkout main
-git pull origin main
-
-# 2. Switch to your branch
-git checkout -b member1/data-pipeline
-
-# 3. Make your changes in YOUR folder only
-#    (Member 1 works in src/data/, Member 2 in src/models/, etc.)
-
-# 4. Test your changes
-pytest tests/ -v
-
-# 5. Commit and push
-git add .
-git commit -m "feat(data): added customer segmentation features"
-git push origin member1/data-pipeline
-
-# 6. Open a Pull Request on GitHub to merge into main
-```
-
-### Golden Rules
-- [TARGET] Only edit files in YOUR assigned folder
-- [TARGET] Always run `pytest tests/` before pushing
-- [TARGET] Use descriptive commit messages
-- [SKIP] Never push large data files or model binaries (they're gitignored)
-- [SKIP] Never push directly to `main` — always use Pull Requests
-
----
-
-##  Key Technologies Used
-
-| Category | Tools |
-|---|---|
-| **Causal Inference** | EconML, DoubleML, DoWhy |
-| **Machine Learning** | Scikit-learn, XGBoost, LightGBM |
-| **Optimization** | SciPy (MILP/HiGHS), PuLP |
-| **Visualization** | Matplotlib, Seaborn, Plotly |
-| **Dashboard** | Streamlit |
-| **Data Processing** | Pandas, NumPy |
-| **Testing** | Pytest |
-| **CI/CD** | GitHub Actions |
-
----
-
-##  What Success Looks Like
-
-By the end of this project, we will demonstrate:
-
-1. **Causal DML targeting outperforms random targeting** — our Qini curve is significantly above the random baseline
-2. **Budget efficiency** — our Knapsack allocation achieves higher ROI than the traditional "discount the big spenders" approach
-3. **Robustness** — Placebo tests confirm our effect is real (not a statistical artifact)
-4. **A working demo** — stakeholders can interactively adjust budgets and see results in real-time via the Streamlit dashboard
-
----
-
-> **Repository:** [github.com/Abdul-Wahab-75/EconoCausal](https://github.com/Abdul-Wahab-75/EconoCausal)
-
-## REST API and Data Drift Detection
-
-EconoCausal provides a REST API for interacting with the Double Machine Learning (DML) causal inference engine. It also includes a data drift detection module to compare reference and current numerical feature distributions.
-
-### 1. Install API Dependencies
-
-Activate the project's virtual environment and install the dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Start the REST API
-
-From the project root directory, run:
+Start the API:
 
 ```bash
 python -m uvicorn src.api.main:app --reload
 ```
 
-The API will be available at:
-
-```text
-http://127.0.0.1:8000
-```
-
-### 3. Interactive API Documentation
-
-Open the following URL in your browser to explore and test the API endpoints using Swagger UI:
+Open the interactive API documentation:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-### 4. Available API Endpoints
+### API Endpoints
 
-| Method | Endpoint | Description |
+| Method | Endpoint | Purpose |
 |---|---|---|
-| GET | `/health` | Checks API health and model status |
-| POST | `/fit` | Fits the DML causal inference model |
-| POST | `/predict` | Predicts Individual Treatment Effects (ITE) |
-| GET | `/model-info` | Returns information about the fitted model |
-| POST | `/drift` | Checks data drift between reference and current data |
+| GET | `/health` | Check API health and model status |
+| POST | `/fit` | Fit the DML model |
+| POST | `/predict` | Predict treatment effects |
+| GET | `/model-info` | Retrieve fitted model information |
+| POST | `/drift` | Check numerical feature distribution drift |
 
-### 5. Fit the Causal Inference Model
+The fitted API model is held in application memory. Restarting the API clears the fitted model state, so the model must be fitted again before prediction.
 
-Send a POST request to `/fit` with feature names, feature values, binary treatment values, and outcome values.
+## 12. Data Drift Detection
 
-Example request:
+The drift module compares reference and current numerical feature distributions.
 
-```json
-{
-  "feature_names": ["Age", "PriorSpend"],
-  "features": [
-    [25, 100],
-    [30, 150],
-    [35, 200],
-    [40, 250],
-    [45, 300],
-    [50, 350],
-    [28, 120],
-    [38, 220]
-  ],
-  "treatment": [0, 1, 0, 1, 0, 1, 1, 0],
-  "outcome": [120, 180, 140, 230, 160, 270, 200, 190],
-  "n_splits": 2,
-  "nuisance_type": "random_forest",
-  "random_state": 42
-}
+It uses:
+
+- **Population Stability Index (PSI):** Measures distribution changes.
+- **Kolmogorov-Smirnov (KS) Test:** Tests whether two numerical samples have statistically different distributions.
+
+A feature is flagged when its PSI reaches the configured threshold or its KS p-value falls below the configured significance level.
+
+Drift detection indicates distribution changes. It does not independently prove model degradation or a change in causal effects.
+
+## 13. Testing
+
+Run the full test suite:
+
+```bash
+python -m pytest tests/ -v
 ```
 
-The response includes the estimated Average Treatment Effect (ATE), standard error, observation count, and feature names.
-
-### 6. Predict Individual Treatment Effects
-
-After successfully fitting the model, send a POST request to `/predict`.
-
-Example request:
-
-```json
-{
-  "feature_names": ["Age", "PriorSpend"],
-  "features": [
-    [32, 180],
-    [42, 280]
-  ]
-}
-```
-
-The response contains the predicted ITE values for the supplied observations.
-
-**Note:** Feature names and their order must match the training request. The model must be fitted before making predictions.
-
-### 7. Data Drift Detection
-
-The `/drift` endpoint compares numerical features in reference and current datasets using:
-
-- **Population Stability Index (PSI):** Measures changes in feature distributions.
-- **Kolmogorov-Smirnov (KS) Test:** Tests for statistical differences between distributions.
-
-Example request:
-
-```json
-{
-  "reference": [
-    {"Age": 25, "PriorSpend": 100},
-    {"Age": 30, "PriorSpend": 150},
-    {"Age": 35, "PriorSpend": 200},
-    {"Age": 40, "PriorSpend": 250}
-  ],
-  "current": [
-    {"Age": 45, "PriorSpend": 400},
-    {"Age": 50, "PriorSpend": 450},
-    {"Age": 55, "PriorSpend": 500},
-    {"Age": 60, "PriorSpend": 550}
-  ],
-  "psi_threshold": 0.20,
-  "significance_level": 0.05
-}
-```
-
-The response reports the features checked, PSI values, KS statistics, p-values, and whether drift was detected.
-
-A feature is flagged when its PSI reaches the configured threshold or its KS test p-value falls below the configured significance level.
-
-### 8. Model State and Limitations
-
-The API currently keeps the fitted model in memory within the running application process. Restarting the API clears this model state, so the model must be fitted again before requesting predictions.
-
-Data drift results indicate distribution changes; they do not independently establish model performance degradation or prove a causal effect.
-
-### 9. Run API and Drift Tests
-
-Run the targeted API and data drift tests:
+Run the API and drift tests separately:
 
 ```bash
 python -m pytest tests/test_api.py tests/test_drift.py -v
 ```
 
-These tests cover API health, model fitting, ITE prediction, model information, drift detection, and validation behaviour.
+Tests are intended to check model, optimization, dashboard-supporting logic, API and data drift functionality.
+
+## 14. Limitations and Modelling Assumptions
+
+- Causal estimates depend on the available data, model assumptions and observed confounders.
+- Observational estimates do not automatically establish causal validity.
+- The optimization uses assumed margin and minimum discount-cost values where actual business costs are unavailable.
+- Estimated ROI is not realized financial ROI.
+- Data drift does not by itself demonstrate model performance degradation.
+- The current API model state is in memory and must be fitted again after an API restart.
+- The dashboard uses Streamlit rather than the React and Plotly UI described in the assignment.
+
+## 15. Final Project Objective
+
+EconoCausal aims to demonstrate how causal machine learning and budget-constrained optimization can support more informed discount allocation.
+
+The final solution combines treatment-effect estimation, policy comparison, optimization, evaluation, dashboard visualization, API access and data drift monitoring.
+
+**Repository:** https://github.com/Abdul-Wahab-75/EconoCausal

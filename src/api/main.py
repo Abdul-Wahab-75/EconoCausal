@@ -4,6 +4,8 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
+from src.evaluation.metrics import compute_uplift_curve, compute_qini_score
+from src.optimization.knapsack import solve_knapsack_discount_allocation
 
 from src.models.dml_estimator import DoubleMLEstimator
 from src.evaluation.drift import detect_data_drift
@@ -16,7 +18,10 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,6 +46,17 @@ class FitRequest(BaseModel):
 class PredictRequest(BaseModel):
     feature_names: List[str] = Field(min_length=1)
     features: List[List[float]] = Field(min_length=1)
+
+class UpliftRequest(BaseModel):
+    treatment: List[float] = Field(min_length=10)
+    outcome: List[float] = Field(min_length=10)
+    ite_predictions: List[float] = Field(min_length=10)
+
+class OptimizeRequest(BaseModel):
+    ite_estimates: List[float] = Field(min_length=1)
+    item_prices: List[float] = Field(min_length=1)
+    budget: float = Field(gt=0)
+    discount_rate: float = Field(default=0.15, gt=0, le=1)
 
 
 @app.get("/health")
@@ -221,4 +237,88 @@ def check_data_drift(request: DriftRequest):
             status_code=400,
             detail=f"Data drift detection failed: {str(exc)}",
         ) from exc
+@app.post("/uplift")
+def evaluate_uplift(request: UpliftRequest):
+    if not (
+        len(request.treatment)
+        == len(request.outcome)
+        == len(request.ite_predictions)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Treatment, outcome and ITE arrays must have equal lengths.",
+        )
 
+    if set(request.treatment) != {0, 1}:
+        raise HTTPException(
+            status_code=400,
+            detail="Treatment must contain both 0 and 1.",
+        )
+
+    curve = compute_uplift_curve(
+        y_true=request.outcome,
+        treatment=request.treatment,
+        ite_preds=request.ite_predictions,
+    )
+
+    qini_score = compute_qini_score(curve)
+
+    records = [
+        {key: float(value) for key, value in row.items()}
+        for row in curve.to_dict(orient="records")
+    ]
+
+    return {
+        "status": "success",
+        "qini_score": float(qini_score),
+        "uplift_curve": records,
+    }
+@app.post("/optimize")
+def optimize_budget(request: OptimizeRequest):
+    if len(request.ite_estimates) != len(request.item_prices):
+        raise HTTPException(
+            status_code=400,
+            detail="ITE estimates and item prices must have equal lengths.",
+        )
+
+    if any(price <= 0 for price in request.item_prices):
+        raise HTTPException(
+            status_code=400,
+            detail="All item prices must be greater than zero.",
+        )
+
+    try:
+        result = solve_knapsack_discount_allocation(
+            ite_estimates=request.ite_estimates,
+            item_prices=request.item_prices,
+            budget=request.budget,
+            discount_rate=request.discount_rate,
+            method="milp",
+            ite_is_revenue=False,
+        )
+
+        return {
+            "status": "success",
+            "selected_flags": [
+                bool(value) for value in result["selected_flags"]
+            ],
+            "targeted_customers": int(result["n_targeted"]),
+            "total_cost": float(result["total_cost"]),
+            "budget_limit": float(result["budget_limit"]),
+            "total_incremental_value": float(
+                result["total_incremental_value"]
+            ),
+            "estimated_roi": float(result["estimated_roi"]),
+            "customer_values": [
+                float(value) for value in result["customer_values"]
+            ],
+            "customer_costs": [
+                float(value) for value in result["customer_costs"]
+            ],
+        }
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Budget optimization failed: {str(error)}",
+        )

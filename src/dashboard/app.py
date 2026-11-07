@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 from pathlib import Path
 
 # Ensure the project root is on sys.path so 'src' is importable
@@ -215,7 +215,7 @@ def execute_causal_engine(dataset_choice: str, n_records: int, model_type: str, 
     if dataset_choice == "Synthetic Benchmark (Known Ground Truth)":
         df = generate_synthetic_data(n_samples=n_records, random_state=42)
         feat_cols = ["Age", "PriorSpend", "VisitFrequency", "LoyaltyScore"]
-        dml = DoubleMLEstimator(n_splits=3, nuisance_type=model_type, backend="native", random_state=42)
+        dml = DoubleMLEstimator(n_splits=3, nuisance_type=model_type, backend="econml", random_state=42)
         dml.fit(df[feat_cols], df["Discount"], df["Sales"])
         df["Estimated_ITE"] = dml.ite_estimates_
         
@@ -253,7 +253,7 @@ def execute_causal_engine(dataset_choice: str, n_records: int, model_type: str, 
         feat_cols = get_rossmann_feature_cols(df)
         df["EstimatedItemPrice"] = np.maximum(df["Sales"] * 0.10, 15.0)
         
-        dml = DoubleMLEstimator(n_splits=3, nuisance_type=model_type, backend="native", random_state=42)
+        dml = DoubleMLEstimator(n_splits=3, nuisance_type=model_type, backend="econml", random_state=42)
         dml.fit(df[feat_cols], df["Discount"], df["Sales"])
         df["Estimated_ITE"] = dml.ite_estimates_
         
@@ -631,3 +631,4 @@ with col_dl:
     """, unsafe_allow_html=True)
 
 st.markdown("</div>", unsafe_allow_html=True)
+
