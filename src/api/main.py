@@ -9,6 +9,10 @@ from src.optimization.knapsack import solve_knapsack_discount_allocation
 
 from src.models.dml_estimator import DoubleMLEstimator
 from src.evaluation.drift import detect_data_drift
+from src.models.propensity_matching import propensity_score_matching
+from src.models.dowhy_analysis import run_dowhy_analysis
+from src.optimization.policy_allocator import compare_allocation_policies
+from src.dashboard.strategy_summary import create_strategy_summary
 
 
 app = FastAPI(
@@ -56,7 +60,35 @@ class OptimizeRequest(BaseModel):
     ite_estimates: List[float] = Field(min_length=1)
     item_prices: List[float] = Field(min_length=1)
     budget: float = Field(gt=0)
+    discount_rate: float = Field(default=0.15, gt=0, le=1) 
+class StrategySummaryRequest(BaseModel):
+    ite_estimates: List[float] = Field(min_length=1)
+    item_prices: List[float] = Field(min_length=1)
+    budget: float = Field(gt=0)
     discount_rate: float = Field(default=0.15, gt=0, le=1)
+    dataset_name: str = "Rossmann"
+    prior_spend: Optional[List[float]] = None
+
+class PSMRequest(BaseModel):
+    feature_names: List[str] = Field(min_length=1)
+    features: List[List[float]] = Field(min_length=2)
+    treatment: List[int] = Field(min_length=2)
+    caliper: float = Field(default=0.2, gt=0)
+    random_state: int = 42
+
+
+class DoWhyRequest(BaseModel):
+    treatment: str
+    outcome: str
+    confounders: List[str] = Field(min_length=1)
+    data: List[Dict[str, float]] = Field(min_length=2)
+    refutation_methods: List[str] = Field(
+        default_factory=lambda: [
+            "random_common_cause",
+            "placebo_treatment_refuter",
+            "data_subset_refuter",
+        ]
+    )    
 
 
 @app.get("/health")
@@ -273,6 +305,7 @@ def evaluate_uplift(request: UpliftRequest):
         "qini_score": float(qini_score),
         "uplift_curve": records,
     }
+
 @app.post("/optimize")
 def optimize_budget(request: OptimizeRequest):
     if len(request.ite_estimates) != len(request.item_prices):
@@ -321,4 +354,171 @@ def optimize_budget(request: OptimizeRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Budget optimization failed: {str(error)}",
+        ) from error
+
+
+@app.post("/psm")
+def run_psm(request: PSMRequest):
+    if len(request.features) != len(request.treatment):
+        raise HTTPException(
+            status_code=400,
+            detail="Features and treatment must contain the same number of rows.",
         )
+
+    if any(len(row) != len(request.feature_names) for row in request.features):
+        raise HTTPException(
+            status_code=400,
+            detail="Each feature row must match the feature_names length.",
+        )
+
+    if len(set(request.feature_names)) != len(request.feature_names):
+        raise HTTPException(
+            status_code=400,
+            detail="Feature names must be unique.",
+        )
+
+    try:
+        X = pd.DataFrame(
+            request.features,
+            columns=request.feature_names,
+        )
+        treatment = pd.Series(request.treatment)
+
+        result = propensity_score_matching(
+            X=X,
+            treatment=treatment,
+            caliper=request.caliper,
+            random_state=request.random_state,
+        )
+
+        return {
+            "status": "success",
+            "propensity_scores": result["propensity_scores"].tolist(),
+            "matched_pairs": result["matched_pairs"].to_dict(orient="records"),
+            "balance_before": result["balance_before"].to_dict(orient="records"),
+            "balance_after": result["balance_after"].to_dict(orient="records"),
+            "treated_before": result["n_treated_before"],
+            "control_before": result["n_control_before"],
+            "treated_matched": result["n_treated_matched"],
+            "control_matched": result["n_control_matched"],
+            "caliper_width": result["caliper_width"],
+            "common_support": list(result["common_support"]),
+        }
+
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"PSM analysis failed: {str(exc)}",
+        ) from exc
+@app.post("/dowhy")
+def run_dowhy(request: DoWhyRequest):
+    try:
+        data = pd.DataFrame(request.data)
+
+        result = run_dowhy_analysis(
+            data=data,
+            treatment=request.treatment,
+            outcome=request.outcome,
+            confounders=request.confounders,
+            refutation_methods=request.refutation_methods,
+        )
+
+        return {
+            "status": "success",
+            "graph": result["graph"],
+            "treatment": result["treatment"],
+            "outcome": result["outcome"],
+            "confounders": result["confounders"],
+            "ate": result["ate"],
+            "estimand": str(result["estimand"]),
+            "estimate": str(result["estimate"]),
+            "refutations": {
+                name: str(value)
+                for name, value in result["refutations"].items()
+            },
+        }
+
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"DoWhy analysis failed: {str(exc)}",
+        ) from exc   
+
+    
+@app.post("/strategy-summary")
+def strategy_summary(request: StrategySummaryRequest):
+    if len(request.ite_estimates) != len(request.item_prices):
+        raise HTTPException(
+            status_code=400,
+            detail="ITE estimates and item prices must have equal lengths.",
+        )
+
+    if any(price <= 0 for price in request.item_prices):
+        raise HTTPException(
+            status_code=400,
+            detail="All item prices must be greater than zero.",
+        )
+
+    if request.prior_spend is not None:
+        if len(request.prior_spend) != len(request.ite_estimates):
+            raise HTTPException(
+                status_code=400,
+                detail="Prior spend and ITE estimates must have equal lengths.",
+            )
+
+    try:
+        data = {
+            "EstimatedItemPrice": request.item_prices,
+        }
+
+        if request.prior_spend is not None:
+            data["PriorSpend"] = request.prior_spend
+
+        df = pd.DataFrame(data)
+
+        knapsack_result = solve_knapsack_discount_allocation(
+            ite_estimates=request.ite_estimates,
+            item_prices=request.item_prices,
+            budget=request.budget,
+            discount_rate=request.discount_rate,
+            method="milp",
+            ite_is_revenue=False,
+        )
+
+        policy_comparison = compare_allocation_policies(
+            df=df,
+            ite_estimates=request.ite_estimates,
+            budget=request.budget,
+            discount_rate=request.discount_rate,
+        )
+
+        summary = create_strategy_summary(
+            knapsack_result=knapsack_result,
+            policy_comparison=policy_comparison,
+            dataset_name=request.dataset_name,
+            currency_symbol="₹",
+        )
+
+        return {
+            "status": "success",
+            "summary": summary,
+            "policy_comparison": policy_comparison.to_dict(
+                orient="records"
+            ),
+        }
+
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Strategy summary failed: {str(exc)}",
+        ) from exc

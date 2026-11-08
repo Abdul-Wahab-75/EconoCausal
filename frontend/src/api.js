@@ -37,4 +37,24 @@ export const optimizeBudget = async (payload) => {
   return response.data;
 };
 
+export const runPSM = async (payload) => {
+  const response = await api.post("/psm", payload);
+  return response.data;
+};
+
+export const runDoWhy = async (payload) => {
+  const response = await api.post("/dowhy", payload);
+  return response.data;
+};
+
+export const runDrift = async (payload) => {
+  const response = await api.post("/drift", payload);
+  return response.data;
+};
+
+export const generateStrategySummary = async (payload) => {
+  const response = await api.post("/strategy-summary", payload);
+  return response.data;
+};
+
 export default api;

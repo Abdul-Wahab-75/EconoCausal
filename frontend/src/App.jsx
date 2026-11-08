@@ -8,6 +8,10 @@ import {
   predictITE,
   evaluateUplift,
   optimizeBudget,
+  runPSM,
+  runDoWhy,
+  runDrift,
+  generateStrategySummary,
 } from "./api";
 import "./App.css";
 
@@ -25,6 +29,11 @@ export default function App() {
   const [modelInfo, setModelInfo] = useState(null);
   const [upliftResult, setUpliftResult] = useState(null);
   const [optimizationResult, setOptimizationResult] = useState(null);
+  const [psmResult, setPsmResult] = useState(null);
+  const [dowhyResult, setDowhyResult] = useState(null);
+  const [driftResult, setDriftResult] = useState(null);
+  const [strategySummary, setStrategySummary] = useState(null);
+  const [strategyLoading, setStrategyLoading] = useState(false);
   const [budget, setBudget] = useState(10000);
   const [discountRate, setDiscountRate] = useState(15);
 
@@ -228,7 +237,7 @@ export default function App() {
     }
   };
 
-  const handleOptimize = async () => {
+  const handleOptimize = async () => {   
     try {
       setOptimizing(true);
       setOptimizationResult(null);
@@ -275,7 +284,196 @@ export default function App() {
     }
   };
 
-  const ranked = predictions
+  const handleStrategySummary = async () => {
+  try {
+    setStrategyLoading(true);
+    setStrategySummary(null);
+
+    if (!predictions.length) {
+      throw new Error("Train the model before generating strategy summary.");
+    }
+
+    const assumedPrice = 50;
+
+    const result = await generateStrategySummary({
+      ite_estimates: predictions.map(Number),
+      item_prices: predictions.map(() => assumedPrice),
+      budget: Number(budget),
+      discount_rate: Number(discountRate) / 100,
+      dataset_name: "Rossmann sample"
+    });
+
+    setStrategySummary(result);
+    setMessage("Strategy summary generated successfully.");
+
+  } catch (error) {
+    setMessage(
+      `Strategy Summary error: ${
+        error.response?.data?.detail ||
+        error.message ||
+        "Something went wrong."
+      }`
+    );
+  } finally {
+    setStrategyLoading(false);
+  }
+};
+
+    const handlePSM = async () => {
+    try {
+      if (!rows.length || !features.length || !treatment) {
+        throw new Error("Upload data and select treatment and features first.");
+      }
+
+      const columns = [...features, treatment];
+      const validRows = rows.filter((row) =>
+        columns.every(
+          (column) =>
+            row[column] !== undefined &&
+            String(row[column]).trim() !== "" &&
+            Number.isFinite(Number(row[column]))
+        )
+      );
+
+      const T = validRows.map((row) => Number(row[treatment]));
+
+      if (!T.includes(0) || !T.includes(1)) {
+        throw new Error("Treatment must contain both 0 and 1.");
+      }
+
+      setMessage("Running Propensity Score Matching...");
+
+      const result = await runPSM({
+        feature_names: features,
+        features: validRows.map((row) =>
+          features.map((column) => Number(row[column]))
+        ),
+        treatment: T,
+        caliper: 0.2,
+        random_state: 42,
+      });
+
+      setPsmResult(result);
+      setMessage("PSM matching completed successfully.");
+    } catch (error) {
+      setMessage(
+        `PSM error: ${
+          error.response?.data?.detail || error.message
+        }`
+      );
+    }
+  };
+
+  const handleDoWhy = async () => {
+    try {
+      if (!rows.length || !features.length || !treatment || !outcome) {
+        throw new Error("Upload data and select treatment, outcome and features.");
+      }
+
+      const columns = [...features, treatment, outcome];
+      const validRows = rows.filter((row) =>
+        columns.every(
+          (column) =>
+            row[column] !== undefined &&
+            String(row[column]).trim() !== "" &&
+            Number.isFinite(Number(row[column]))
+        )
+      );
+
+      const T = validRows.map((row) => Number(row[treatment]));
+
+      if (!T.includes(0) || !T.includes(1)) {
+        throw new Error("Treatment must contain both 0 and 1.");
+      }
+
+      setMessage("Running DoWhy causal analysis and refutation tests...");
+
+      const data = validRows.map((row) =>
+        Object.fromEntries(
+          columns.map((column) => [column, Number(row[column])])
+        )
+      );
+
+      const result = await runDoWhy({
+        treatment,
+        outcome,
+        confounders: features,
+        data,
+        refutation_methods: [
+          "random_common_cause",
+          "placebo_treatment_refuter",
+          "data_subset_refuter",
+        ],
+      });
+
+      setDowhyResult(result);
+      setMessage("DoWhy causal analysis completed successfully.");
+    } catch (error) {
+      setMessage(
+        `DoWhy error: ${
+          error.response?.data?.detail || error.message
+        }`
+      );
+    }
+  };
+
+    const handleDrift = async () => {
+    try {
+      if (!rows.length || !features.length) {
+        throw new Error("Upload data and select features first.");
+      }
+
+      const validRows = rows.filter((row) =>
+        features.every(
+          (column) =>
+            row[column] !== undefined &&
+            String(row[column]).trim() !== "" &&
+            Number.isFinite(Number(row[column]))
+        )
+      );
+
+      if (validRows.length < 4) {
+        throw new Error("At least 4 valid records are required.");
+      }
+
+      // Demonstration split: first 70% reference, remaining 30% current.
+      const splitIndex = Math.floor(validRows.length * 0.7);
+
+      const reference = validRows.slice(0, splitIndex).map((row) =>
+        Object.fromEntries(
+          features.map((column) => [column, Number(row[column])])
+        )
+      );
+
+      const current = validRows.slice(splitIndex).map((row) =>
+        Object.fromEntries(
+          features.map((column) => [column, Number(row[column])])
+        )
+      );
+
+      setMessage("Checking data drift...");
+
+      const result = await runDrift({
+        reference,
+        current,
+        psi_threshold: 0.20,
+        significance_level: 0.05,
+      });
+
+      setDriftResult(result);
+      setMessage("Data drift analysis completed successfully.");
+    } catch (error) {
+      setMessage(
+        `Drift error: ${
+          error.response?.data?.detail ||
+          error.message ||
+          "Something went wrong."
+        }`
+      );
+    }
+  };
+
+  const ranked = predictions  
     .map((ite, index) => ({
       row: evaluationRows[index],
       ite,
@@ -514,7 +712,7 @@ export default function App() {
         </section>
       )}
 
-      {optimizationResult && (
+      {optimizationResult && ( // yha se 
         <section>
           <h2>7. Budget Allocation Results</h2>
           <p>
@@ -573,6 +771,243 @@ export default function App() {
               ))}
             </tbody>
           </table>
+        </section>
+      )}
+
+      {optimizationResult && (
+  <section>
+    <h2>7A. AI Strategy Summary</h2>
+
+    <p>
+      Compare causal optimization, heuristic and random
+      targeting strategies.
+    </p>
+
+    <button
+      onClick={handleStrategySummary}
+      disabled={strategyLoading || optimizing}
+    >
+      {strategyLoading
+        ? "Generating Summary..."
+        : "Generate Strategy Summary"}
+    </button>
+
+    {strategySummary && (
+      <>
+        <h3>Strategy Overview</h3>
+
+        <p>
+          {strategySummary.summary?.overview}
+        </p>
+
+        <p>
+          <strong>Best Policy: </strong>
+          {strategySummary.summary?.best_policy}
+        </p>
+
+        <p>
+          <strong>Recommendation: </strong>
+          {strategySummary.summary?.recommendation}
+        </p>
+
+        <p>
+          <strong>Comparison: </strong>
+          {strategySummary.summary?.comparison_text}
+        </p>
+
+        <h3>Policy Comparison</h3>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Policy</th>
+              <th>Targeted</th>
+              <th>Budget Spent</th>
+              <th>Incremental Gain</th>
+              <th>ROI</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {strategySummary.policy_comparison?.map(
+              (item, index) => (
+                <tr key={index}>
+                  <td>{item.Policy}</td>
+                  <td>{item.Targeted_Customers}</td>
+                  <td>
+                    ₹{Number(item.Budget_Spent).toFixed(2)}
+                  </td>
+                  <td>
+                    {Number(item.Incremental_Gain).toFixed(2)}
+                  </td>
+                  <td>
+                    {Number(item.ROI).toFixed(2)}
+                  </td>
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+
+        <h3>Important Caveat</h3>
+        <p>{strategySummary.summary?.caveat}</p>
+      </>
+    )}
+  </section>
+)}
+
+            {rows.length > 0 && (
+        <section>
+          <h2>8. Propensity Score Matching (PSM)</h2>
+          <p>
+            Match treated and control records using selected
+            pre-treatment features.
+          </p>
+
+          <button onClick={handlePSM}>
+            Run Propensity Score Matching
+          </button>
+
+          {psmResult && (
+            <>
+              <h3>PSM Results</h3>
+              <p>Treated before: {psmResult.treated_before}</p>
+              <p>Control before: {psmResult.control_before}</p>
+              <p>Treated matched: {psmResult.treated_matched}</p>
+              <p>Control matched: {psmResult.control_matched}</p>
+
+              <h3>Covariate Balance Before Matching</h3>
+              <pre>{JSON.stringify(psmResult.balance_before, null, 2)}</pre>
+
+              <h3>Covariate Balance After Matching</h3>
+              <pre>{JSON.stringify(psmResult.balance_after, null, 2)}</pre>
+
+              <h3>Matched Pairs</h3>
+              <pre>{JSON.stringify(psmResult.matched_pairs, null, 2)}</pre>
+            </>
+          )}
+        </section>
+      )}
+
+      {rows.length > 0 && (
+        <section>
+          <h2>9. DoWhy Causal Analysis</h2>
+          <p>
+            Estimate the causal effect and run robustness refutation tests.
+          </p>
+
+          <button onClick={handleDoWhy}>
+            Run DoWhy Analysis
+          </button>
+
+          {dowhyResult && (
+            <>
+              <h3>DoWhy Results</h3>
+              <p>Treatment: {dowhyResult.treatment}</p>
+              <p>Outcome: {dowhyResult.outcome}</p>
+              <p>Confounders: {dowhyResult.confounders?.join(", ")}</p>
+              <p>Average Treatment Effect: {String(dowhyResult.ate)}</p>
+
+              <h3>Causal Graph (DAG)</h3>
+              <pre>{dowhyResult.graph}</pre>
+
+              <h3>Estimand</h3>
+              <pre>{dowhyResult.estimand}</pre>
+
+              <h3>Refutation Results</h3>
+              <pre>{JSON.stringify(dowhyResult.refutations, null, 2)}</pre>
+            </>
+          )}
+        </section>
+      )}
+
+            {rows.length > 0 && (
+        <section>
+          <h2>10. Automated Data Drift Detection</h2>
+
+          <p>
+            Compare reference and current data distributions
+            using PSI and Kolmogorov-Smirnov tests.
+          </p>
+
+          <p>
+            Reference: first 70% of valid records.
+            Current: remaining 30% of valid records.
+          </p>
+
+          <button onClick={handleDrift}>
+            Run Data Drift Detection
+          </button>
+
+          {driftResult && (
+            <>
+              <h3>Drift Analysis Summary</h3>
+
+              <p>
+                Reference observations:{" "}
+                {driftResult.reference_observations}
+              </p>
+
+              <p>
+                Current observations:{" "}
+                {driftResult.current_observations}
+              </p>
+
+              <p>
+                Features checked: {driftResult.features_checked}
+              </p>
+
+              <p>
+                Drift detected:{" "}
+                {driftResult.drift_detected ? "YES" : "NO"}
+              </p>
+
+              <p>
+                Drifted features:{" "}
+                {driftResult.drifted_features?.join(", ") || "None"}
+              </p>
+
+              <h3>Feature-wise Drift Results</h3>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th>PSI</th>
+                    <th>KS p-value</th>
+                    <th>PSI Drift</th>
+                    <th>KS Drift</th>
+                    <th>Overall Status</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {driftResult.feature_results?.map((item) => (
+                    <tr key={item.feature}>
+                      <td>{item.feature}</td>
+                      <td>{Number(item.psi).toFixed(4)}</td>
+                      <td>{Number(item.ks_p_value).toFixed(6)}</td>
+                      <td>{item.psi_drift ? "Yes" : "No"}</td>
+                      <td>{item.ks_drift ? "Yes" : "No"}</td>
+                      <td>
+                        {item.drift_detected ? "DRIFT" : "STABLE"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <p>
+                PSI threshold:{" "}
+                {driftResult.thresholds?.psi_threshold}
+              </p>
+
+              <p>
+                Significance level:{" "}
+                {driftResult.thresholds?.significance_level}
+              </p>
+            </>
+          )}
         </section>
       )}
     </main>
